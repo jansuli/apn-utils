@@ -11,16 +11,13 @@ except NameError:
 
 m=6
 K.<a> = GF(2^m, 'a')
+print("The minimal polynomial of 'a' is:")
+print(a.minimal_polynomial())
 def f(x):
   return x^3
   
 def g(x):
 	return x^3 + x^10 + a * x^24
-
-def coeffList(dim, fieldElem):
-  p = fieldElem.polynomial().list()
-  padding = [0 for j in range(0, dim - len(p)) ]
-  return p+padding
 
 def generatorGF(K, f):
   '''Returns the 2x2^m-1 generator matrix H_f of Code C_f as defined by Dillon.
@@ -42,11 +39,13 @@ def GFtoBinMatrix(M, dim):
     col = H[:, i]
     tmpCol = []
     for elem in col.list():
-      coeff = coeffList(dim, elem)
+      coeff = vector(elem).list()
+      print(str(a)+" corresponds to " + str(coeff))
       tmpCol = tmpCol + coeff
+    print(tmpCol)
     A.append(tmpCol)
- 
-  return matrix(GF(2), A).transpose()
+  print A[:5]
+  return matrix(GF(2),A).transpose()
 
 def evalsZero(mat, listOfVectors):
 	for vec in listOfVectors:
@@ -54,7 +53,7 @@ def evalsZero(mat, listOfVectors):
 		if mat*vec == 0:
 			return True
     
-def findSimplexMatrices(ZDict, K, verbosity=True, save=True):
+def findSimplexMatrices(ZDict, K, verbosity=True, save=True, reduced_echelon = True):
 	m = K.degree()
 	m2 = m*2
 	V = K.vector_space()
@@ -69,26 +68,31 @@ def findSimplexMatrices(ZDict, K, verbosity=True, save=True):
 		progressBarLabels[i] = 0
 	
 	def findNextCol(cols):
-		if verbosity: tqdm.write("Start vector was:")
-		if verbosity: tqdm.write(cols[0].str())
+		if verbosity == 2: tqdm.write("Start vector was:")
+		if verbosity == 2: tqdm.write(vector(cols[0]).str())
 		nCols = len(cols)
 		classN = cols[-1][::-1].index(1) if 1 in cols[-1] else m2		# class of last constructed column
 		reqN = m2 - nCols												# columns left to build. at the moment constructing col no. len(cols) + 1
 		
 		def generateLookUp(vecs,colsTilNow):
-			testCols = list(colsTilNow)
+			rank = matrix(colsTilNow).rank()
 			lastCol = colsTilNow[-1]
 			lastClass = lastCol[::-1].index(1) if 1 in lastCol else m
-			if verbosity: tqdm.write("last class: %d"%lastClass)
+			if verbosity == 2: tqdm.write("last class: %d"%lastClass)
 			### pre-filtering: A we need m steps only vectors of classes lastClass to m and the e of lastClass-1are allowed:
 			lookUp=list()
-			if lastClass != 0:
-				for i in range(lastClass-1, m+1):
+			if lastClass != 0 and (m - rank) < reqN:
+				for i in range(lastClass if reduced_echelon else lastClass-1, m+1):
 					lookUp = lookUp + vClasses[i]
 				
-				#e = [0 for i in range(0,m)]
-				#e[m-lastClass] = 1
-				#lookUp.append(e)
+				if reduced_echelon:
+					e = [0 for i in range(0,m)]		## strenge zeilenstufen
+					e[m-lastClass] = 1
+					lookUp.append(e)
+			elif lastClass != 0:
+				e = [0 for i in range(0,m)]		## strenge zeilenstufen
+				e[m-lastClass] = 1
+				lookUp =[e]
 			else:
 				lookUp = vecs
 			
@@ -98,7 +102,7 @@ def findSimplexMatrices(ZDict, K, verbosity=True, save=True):
 		lookUp = generateLookUp(v, cols)
 		progressBarLabels[nCols] += 1
 	
-		if verbosity: tqdm.write("We have %d possible vectors to choose from and test."%(len(lookUp)))
+		if verbosity == 2: tqdm.write("We have %d possible vectors to choose from and test."%(len(lookUp)))
 		
 		
 		if(len(lookUp)>0):
@@ -116,15 +120,16 @@ def findSimplexMatrices(ZDict, K, verbosity=True, save=True):
 					#print("possible new col :D Until now we found %d complete solutions"%len(sols))
 					if(reqN > 1 ):#and len(sols)<4):
 						findNextCol(newCols)
-					elif(reqN == 1 and mat.rank() == m):
-						if verbosity: tqdm.write("SUCCESS, now we got #sols: %d"%(len(sols)))
+					elif(reqN == 1):
+						if verbosity == 2: tqdm.write("SUCCESS, now we got #sols: %d"%(len(sols)))
+						if verbosity == 1: tqdm.write(mat.str() + "\n \n")
 						sols.append(mat)
 						if save :
 							with open("sols", "w+") as f:
 								pk.dump(sols, f)
 						
 						#return True # remove later on
-				elif(verbosity):
+				elif(verbosity == 2):
 					tqdm.write("The following matrix evaluates to zero:")
 					tqdm.write(mat.str())
 					tqdm.write("------------------------------------------------\n")
@@ -243,5 +248,5 @@ h = GFtoBinMatrix(H, m)
 print("Creating sorted sum set...")
 z, zeta = sortedSumSet(h)
 
-sols = findSimplexMatrices(zeta, K, verbosity=False) 
+sols = findSimplexMatrices(zeta, K, verbosity=1) 
 dis = checkDisjoint(sols, h)
