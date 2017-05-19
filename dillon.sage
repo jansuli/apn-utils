@@ -2,11 +2,14 @@ try:
 	np = numpy
 	pk = pickle
 	tqdm = tqdm
+	sleep = slepp
 except NameError:
 	import numpy as np
 	import pickle as pk
 	import sys
 	from tqdm import tqdm
+	from time import sleep
+
 #from __future__ import print_function
 
 m=6
@@ -36,23 +39,153 @@ def GFtoBinMatrix(M, dim):
   A = []
   N = M.ncols()
   for i in range(0, N):
-    col = H[:, i]
+    col = M[:, i]
     tmpCol = []
     for elem in col.list():
       coeff = vector(elem).list()
-      print(str(a)+" corresponds to " + str(coeff))
       tmpCol = tmpCol + coeff
-    print(tmpCol)
     A.append(tmpCol)
-  print A[:5]
   return matrix(GF(2),A).transpose()
 
 def evalsZero(mat, listOfVectors):
 	for vec in listOfVectors:
 		#print("Teste den Vector {}".format(vec))
-		if mat*vec == 0:
+		if mat * vec == 0:
+			if mat[:,0] == 0: tqdm.write(mat.str() + "*"+ str(vec.list()) +"evals to zero")
+			MAT = str(mat*vec)
+			if mat[:,0] == 0: tqdm.write(MAT +"\n\n") 
 			return True
-    
+
+def altSimplexMatrices(ZDict, K):
+	m = K.degree()
+	m2 = m*2
+	V = K.vector_space()
+	v = V.list()
+	v_sorted,vClasses = sortedSumSet(matrix(v).transpose(),verbosity=True, sumUp = False)
+	start = vClasses[m] + vClasses[m-1] # due to reduced row echelons
+	baseMatrixV = matrix.identity(GF(2),m)
+	
+	testVectorLookUp = dict()
+	
+	for j in range(1,m2):
+		testVecs = list()
+		for i in range(m2 - j-1, m2+1):
+			print("Including class %d into testVecs."%i)
+			testVecs = testVecs + ZDict[i]
+		testVecs = [vec[:j+1] for vec in testVecs]
+		testVectorLookUp[j] = testVecs
+		print "\n\n\n"
+		
+	
+	def nextCol(matrixTilNow):
+		nCols = matrixTilNow.ncols()
+		rank = matrixTilNow.rank()
+		lastCol = matrixTilNow[:,-1].list()
+		lastClass=lastCol[::-1].index(1) if 1 in lastCol else m
+		requiredCols = m2-nCols
+		lookUp = list() 
+				
+		# Vectors in v, that allow row reduced echelon form:
+		if lastClass != 0 and (m-rank) < requiredCols:
+			for i in range(lastClass, m+1):
+				lookUp = lookUp + vClasses[i]
+			lookUp.append(vector(baseMatrixV[-lastClass]))
+		elif lastClass != 0:
+			lookUp = [  vector(baseMatrixV[-lastClass])]
+		else:
+			lookUp = v
+		#tqdm.write(matrixTilNow.str() + "\n")
+		
+		if(len(lookUp) > 0):
+			testVecs = testVectorLookUp[nCols]
+			
+			for candidate in lookUp:#, postfix={"sols: ":len(sols)}):
+				candMatrix = matrixTilNow.augment(candidate)
+				print ("While havin %d solutions investigating \n%s ...\n\n"%(len(sols),candMatrix.str()))
+				kernel = candMatrix.right_kernel()
+				for testVec in testVecs:
+					if testVec in kernel:
+						verworfen.append(candMatrix)
+						break
+				else:
+					if requiredCols != 1:
+						nextCol(candMatrix)
+					else:
+						sols.append(candMatrix)
+						print(len(sols))
+	sols=list()
+	verworfen = list()
+	start.reverse()
+	for vec in start:
+		mat = matrix([vec]).transpose()
+		nextCol(mat)
+	
+	return sols 
+	
+def altSimplexMatricesD(ZDict, K):
+	m = K.degree()
+	m2 = m*2
+	V = K.vector_space()
+	v = V.list()
+	v_sorted,vClasses = sortedSumSet(matrix(v).transpose(),verbosity=True, sumUp = False)
+	start = vClasses[m] + vClasses[m-1] # due to reduced row echelons
+	baseMatrixV = matrix.identity(GF(2),m)
+	
+	testVectorLookUp = dict()
+	
+	for j in range(1,m2):
+		testVecs = list()
+		for i in range(m2 - j-1, m2+1):
+			print("Including class %d into testVecs."%i)
+			testVecs = testVecs + ZDict[i]
+		testVecs = [vec[:j+1] for vec in testVecs]
+		testVectorLookUp[j] = testVecs
+		print "\n\n\n"
+		
+	
+	def nextCol(matrixTilNow):
+		nCols = matrixTilNow.ncols()
+		rank = matrixTilNow.rank()
+		lastCol = matrixTilNow[:,-1].list()
+		requiredCols = m2-nCols
+		lookUp = list() 
+				
+		# Vectors in v, that allow row reduced echelon form:
+		if rank != m and (m-rank) < requiredCols:
+			for i in range(m-rank, m+1):
+				lookUp = lookUp + vClasses[i]
+			lookUp.append(vector(baseMatrixV[rank-m]))
+		elif rank != m :
+			lookUp = [  vector(baseMatrixV[rank-m])]
+		else:
+			lookUp = v
+		lookUp.reverse()
+		#tqdm.write(matrixTilNow.str() + "\n")
+		
+		if(len(lookUp) > 0):
+			testVecs = testVectorLookUp[nCols]
+			for candidate in lookUp:#, postfix={"sols: ":len(sols)}):
+				candMatrix = matrixTilNow.augment(candidate)
+				print ("While havin %d solutions investigating \n%s...\n\n"%(len(sols),candMatrix.str()))
+				kernel = candMatrix.right_kernel()
+				for testVec in testVecs:
+					if testVec in kernel:
+						break
+				else:
+					if requiredCols != 1:
+						nextCol(candMatrix)
+					else:
+						sols.append(candMatrix)
+						print(len(sols))
+	sols=list()
+	verworfen = list()
+	start.reverse()
+	for vec in start:
+		mat = matrix([vec]).transpose()
+		nextCol(mat)
+	
+	return sols,verworfen 
+	
 def findSimplexMatrices(ZDict, K, verbosity=True, save=True, reduced_echelon = True):
 	m = K.degree()
 	m2 = m*2
@@ -107,9 +240,9 @@ def findSimplexMatrices(ZDict, K, verbosity=True, save=True, reduced_echelon = T
 		
 		if(len(lookUp)>0):
 			# Testing against sorted sum set given by ZDict
-			testVecs = []
-			for i in range(m2,m2-nCols-2, -1):
-				testVecs = testVecs + ZDict[i]
+			testVecs = ZDict[m2-nCols-1]
+			#for i in range(m2,m2-nCols-2, -1):
+			#	testVecs = testVecs + ZDict[i]
 			testVecs = [vec[:nCols+1] for vec in testVecs]
 			for vec in tqdm(lookUp, postfix = {'#sols': len(sols)}, desc="level %d.%d"%(nCols, progressBarLabels[nCols])):
 				newCols = list(cols)
@@ -118,7 +251,7 @@ def findSimplexMatrices(ZDict, K, verbosity=True, save=True, reduced_echelon = T
 				
 				if not evalsZero(mat, testVecs):
 					#print("possible new col :D Until now we found %d complete solutions"%len(sols))
-					if(reqN > 1 ):#and len(sols)<4):
+					if(reqN > 1 ):
 						findNextCol(newCols)
 					elif(reqN == 1):
 						if verbosity == 2: tqdm.write("SUCCESS, now we got #sols: %d"%(len(sols)))
@@ -133,10 +266,8 @@ def findSimplexMatrices(ZDict, K, verbosity=True, save=True, reduced_echelon = T
 					tqdm.write("The following matrix evaluates to zero:")
 					tqdm.write(mat.str())
 					tqdm.write("------------------------------------------------\n")
-			return			
 		else:
 			tqdm.write("Not enough choices left.")
-			return
 		
 	#test run with one start vector choosen at random
 	#vecs.remove(vecs[0])
@@ -204,7 +335,7 @@ def sortedSumSet(H, verbosity = False, sumUp = True):
 				possibleClasses.remove(currentClass)
 				subR = B[:, onePos:]
 				subL = B[:, :onePos]
-				vecSumClassDict[currentClass] = [vector(subR[:,i]) for i in range(0, subR.shape[1])]
+				vecSumClassDict[currentClass] = matrix(GF(2),subR).columns()
 				if verbosity: print("These are:")
 				
 				if verbosity: print(subR)
@@ -217,7 +348,7 @@ def sortedSumSet(H, verbosity = False, sumUp = True):
 					if subL.shape[1] != 0:
 						print("Class m included")
 						possibleClasses.remove(nRows)
-						vecSumClassDict[nRows] = [vector(subL[:,0])]
+						vecSumClassDict[nRows] = matrix(GF(2),subL).columns()
 					return np.hstack((subL, subR))
 			else:
 				if verbosity: print("There are no vectors of class %d in Σ. Checking for next..."%(currentClass))
@@ -241,12 +372,29 @@ def sortedSumSet(H, verbosity = False, sumUp = True):
 	return A_sorted, vecSumClassDict
 
 print("Generator Matrix H over finite Field GF(2^m)")
-H = generatorGF(K,g)
+H = generatorGF(K,f)
 print("Binary Generator h.")
 h = GFtoBinMatrix(H, m)
 
-print("Creating sorted sum set...")
-z, zeta = sortedSumSet(h)
 
-sols = findSimplexMatrices(zeta, K, verbosity=1) 
-dis = checkDisjoint(sols, h)
+print("Creating sorted sum set...")
+#z, zeta = sortedSumSet(h.augment(vector([0 for i in range(0,2*m)])), verbosity =True)
+
+#sols = findSimplexMatrices(zeta, K, verbosity=1) 
+#sols = altSimplexMatrices(zeta, K)
+#dis = checkDisjoint(sols, h)
+
+def f1(x):
+	b = a^(-2)
+	return b^38*x^48+b^33*x^40 + b^28*x^34 + b^25*x^33 + b^43 * x ^ 32 + b^5* x^24 + b^42 *x^20 + x^17 + b^2*x^16 + b^4* x^12 + b^7 *x^10 + b^58*x^8 + b^59 *x^6 + b^5 *x^5 + b^36 * x^4 + b^47 *x^3 + b^30 *x^2 +b^9 *x
+	
+#F1 = generatorGF(K, f1)[1,:]
+#F1b = GFtoBinMatrix(F1, m)
+
+#F1L = h.solve_left(F1b).echelon_form()
+
+	
+#debugSimplex(zeta,K,F1L)
+
+#sols, verw = altSimplexMatricesD(zeta,K)
+#checkDisjoint(sols)
