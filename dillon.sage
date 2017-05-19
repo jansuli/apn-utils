@@ -89,7 +89,7 @@ def altSimplexMatrices(ZDict, K):
 		
 		if(len(lookUp) > 0):
 			testVecs = testVectorLookUp[nCols]
-			for candidate in lookUp:#, postfix={"sols: ":len(sols)}):
+			for candidate in tqdm(lookUp, postfix={"sols: ":len(sols)}):
 				candMatrix = matrixTilNow.augment(candidate)
 				print ("While havin %d solutions investigating \n%s...\n\n"%(len(sols),candMatrix.str()))
 				for testVec in testVecs:
