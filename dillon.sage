@@ -51,8 +51,22 @@ def GFtoBinMatrix(M, dim):
     A.append(tmpCol)
   return matrix(GF(2),A).transpose()
   
-def nextStep(testVectorLookUp, sols, matrixTilNow):
+def nextStep(testVectorLookUp, sols,m2, vClasses,v, baseMatrixV,matrixTilNow):
 	nCols = matrixTilNow.ncols()
+	rank = matrixTilNow.rank()
+	lastCol = matrixTilNow[:,-1].list()
+	requiredCols = m2-nCols
+	lookUp = list() 
+		
+	# Vectors in v, that allow row reduced echelon form:
+	if rank != m and (m-rank) < requiredCols:
+		for i in range(m-rank, m+1):
+			lookUp = lookUp + vClasses[i]
+		lookUp.append(vector(baseMatrixV[rank-m]))
+	elif rank != m :
+		lookUp = [vector(baseMatrixV[rank-m])]
+	else:
+		lookUp = v
 	testVecs = testVectorLookUp[nCols]
 	for candidate in lookUp:
 		candMatrix = matrixTilNow.augment(candidate)
@@ -62,7 +76,7 @@ def nextStep(testVectorLookUp, sols, matrixTilNow):
 				break
 		else:
 			if requiredCols != 1:
-				nextStep(candMatrix)
+				nextStep(testVectorLookUp, sols, m2, vClasses,v, baseMatrixV, candMatrix)
 			else:
 				sols.append(candMatrix)
 				print(len(sols))
@@ -105,17 +119,18 @@ def SimplexMatrices(ZDict, K, workers = 2):
 		else:
 			lookUp = v
 		#tqdm.write(matrixTilNow.str() + "\n")
-		lookUps = lookUps + [matrixTilNow.augment(cand) for cand in lookUp] 
+		return [matrixTilNow.augment(cand) for cand in lookUp] 
 	
 	lookUps = list()	
 	sols=list()
 	start.reverse()
 	for vec in start:
 		mat = matrix([vec]).transpose()
-		firstStepLookUp(mat)
+		lookUps = lookUps + firstStepLookUp(mat)
 	pool = Pool(processes=workers)
-	func = partial(nextStep,testVectorLookUp,sols)
+	func = partial(nextStep,testVectorLookUp,sols,m2,vClasses,v, baseMatrixV)
 	pool.map(func, lookUps)
+	pool.close()
 	return sols 
 
 def altSimplexMatrices(ZDict, K):
