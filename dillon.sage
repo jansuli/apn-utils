@@ -2,13 +2,17 @@ try:
 	np = numpy
 	pk = pickle
 	tqdm = tqdm
-	sleep = slepp
+	sleep = sleep
+	Pool = Pool
+	partial = partial
 except NameError:
 	import numpy as np
 	import pickle as pk
 	import sys
 	from tqdm import tqdm
 	from time import sleep
+	from multiprocessing import Pool
+	from functools import partial
 
 #from __future__ import print_function
 
@@ -46,6 +50,73 @@ def GFtoBinMatrix(M, dim):
       tmpCol = tmpCol + coeff
     A.append(tmpCol)
   return matrix(GF(2),A).transpose()
+  
+def nextStep(testVectorLookUp, sols, matrixTilNow):
+	nCols = matrixTilNow.ncols()
+	testVecs = testVectorLookUp[nCols]
+	for candidate in lookUp:
+		candMatrix = matrixTilNow.augment(candidate)
+		print ("While havin %d solutions investigating \n%s...\n\n"%(len(sols),candMatrix.str()))
+		for testVec in testVecs:
+			if candMatrix * testVec == 0:
+				break
+		else:
+			if requiredCols != 1:
+				nextStep(candMatrix)
+			else:
+				sols.append(candMatrix)
+				print(len(sols))
+  
+def SimplexMatrices(ZDict, K, workers = 2):
+	m = K.degree()
+	m2 = m*2
+	V = K.vector_space()
+	v = V.list()
+	v_sorted,vClasses = sortedSumSet(matrix(v).transpose(),verbosity=True, sumUp = False)
+	start = vClasses[m] + vClasses[m-1] # due to reduced row echelons
+	baseMatrixV = matrix.identity(GF(2),m)
+	
+	testVectorLookUp = dict()
+	
+	for j in range(1,m2):
+		testVecs = list()
+		for i in range(m2 - j-1, m2+1):
+			print("Including class %d into testVecs."%i)
+			testVecs = testVecs + ZDict[i]
+		testVecs = [vec[:j+1] for vec in testVecs]
+		testVectorLookUp[j] = testVecs
+		print "\n\n\n"
+		
+	
+	def firstStepLookUp(matrixTilNow):
+		nCols = matrixTilNow.ncols()
+		rank = matrixTilNow.rank()
+		lastCol = matrixTilNow[:,-1].list()
+		requiredCols = m2-nCols
+		lookUp = list() 
+				
+		# Vectors in v, that allow row reduced echelon form:
+		if rank != m and (m-rank) < requiredCols:
+			for i in range(m-rank, m+1):
+				lookUp = lookUp + vClasses[i]
+			lookUp.append(vector(baseMatrixV[rank-m]))
+		elif rank != m :
+			lookUp = [vector(baseMatrixV[rank-m])]
+		else:
+			lookUp = v
+		#tqdm.write(matrixTilNow.str() + "\n")
+		lookUps = lookUps + [matrixTilNow.augment(cand) for cand in lookUp] 
+	
+	lookUps = list()	
+	sols=list()
+	start.reverse()
+	for vec in start:
+		mat = matrix([vec]).transpose()
+		firstStepLookUp(mat)
+	pool = Pool(processes=workers)
+	func = partial(nextStep,testVectorLookUp,sols)
+	pool.map(func, lookUps)
+	return sols 
 
 def altSimplexMatrices(ZDict, K):
 	m = K.degree()
@@ -84,7 +155,6 @@ def altSimplexMatrices(ZDict, K):
 			lookUp = [vector(baseMatrixV[rank-m])]
 		else:
 			lookUp = v
-		lookUp.reverse()
 		#tqdm.write(matrixTilNow.str() + "\n")
 		
 		if(len(lookUp) > 0):
@@ -208,8 +278,8 @@ print("Creating sorted sum set...")
 z, zeta = sortedSumSet(h.augment(vector([0 for i in range(0,2*m)])), verbosity =True)
 
 #sols = findSimplexMatrices(zeta, K, verbosity=1) 
-sols = altSimplexMatrices(zeta, K)
-dis = checkDisjoint(sols, h)
+#sols = altSimplexMatrices(zeta, K)
+#dis = checkDisjoint(sols, h)
 
 def f1(x):
 	b = a^(-2)
