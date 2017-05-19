@@ -47,82 +47,7 @@ def GFtoBinMatrix(M, dim):
     A.append(tmpCol)
   return matrix(GF(2),A).transpose()
 
-def evalsZero(mat, listOfVectors):
-	for vec in listOfVectors:
-		#print("Teste den Vector {}".format(vec))
-		if mat * vec == 0:
-			if mat[:,0] == 0: tqdm.write(mat.str() + "*"+ str(vec.list()) +"evals to zero")
-			MAT = str(mat*vec)
-			if mat[:,0] == 0: tqdm.write(MAT +"\n\n") 
-			return True
-
 def altSimplexMatrices(ZDict, K):
-	m = K.degree()
-	m2 = m*2
-	V = K.vector_space()
-	v = V.list()
-	v_sorted,vClasses = sortedSumSet(matrix(v).transpose(),verbosity=True, sumUp = False)
-	start = vClasses[m] + vClasses[m-1] # due to reduced row echelons
-	baseMatrixV = matrix.identity(GF(2),m)
-	
-	testVectorLookUp = dict()
-	
-	for j in range(1,m2):
-		testVecs = list()
-		for i in range(m2 - j-1, m2+1):
-			print("Including class %d into testVecs."%i)
-			testVecs = testVecs + ZDict[i]
-		testVecs = [vec[:j+1] for vec in testVecs]
-		testVectorLookUp[j] = testVecs
-		print "\n\n\n"
-		
-	
-	def nextCol(matrixTilNow):
-		nCols = matrixTilNow.ncols()
-		rank = matrixTilNow.rank()
-		lastCol = matrixTilNow[:,-1].list()
-		lastClass=lastCol[::-1].index(1) if 1 in lastCol else m
-		requiredCols = m2-nCols
-		lookUp = list() 
-				
-		# Vectors in v, that allow row reduced echelon form:
-		if lastClass != 0 and (m-rank) < requiredCols:
-			for i in range(lastClass, m+1):
-				lookUp = lookUp + vClasses[i]
-			lookUp.append(vector(baseMatrixV[-lastClass]))
-		elif lastClass != 0:
-			lookUp = [  vector(baseMatrixV[-lastClass])]
-		else:
-			lookUp = v
-		#tqdm.write(matrixTilNow.str() + "\n")
-		
-		if(len(lookUp) > 0):
-			testVecs = testVectorLookUp[nCols]
-			
-			for candidate in lookUp:#, postfix={"sols: ":len(sols)}):
-				candMatrix = matrixTilNow.augment(candidate)
-				print ("While havin %d solutions investigating \n%s ...\n\n"%(len(sols),candMatrix.str()))
-				kernel = candMatrix.right_kernel()
-				for testVec in testVecs:
-					if testVec in kernel:
-						verworfen.append(candMatrix)
-						break
-				else:
-					if requiredCols != 1:
-						nextCol(candMatrix)
-					else:
-						sols.append(candMatrix)
-						print(len(sols))
-	sols=list()
-	verworfen = list()
-	start.reverse()
-	for vec in start:
-		mat = matrix([vec]).transpose()
-		nextCol(mat)
-	
-	return sols 
-	
-def altSimplexMatricesD(ZDict, K):
 	m = K.degree()
 	m2 = m*2
 	V = K.vector_space()
@@ -156,7 +81,7 @@ def altSimplexMatricesD(ZDict, K):
 				lookUp = lookUp + vClasses[i]
 			lookUp.append(vector(baseMatrixV[rank-m]))
 		elif rank != m :
-			lookUp = [  vector(baseMatrixV[rank-m])]
+			lookUp = [vector(baseMatrixV[rank-m])]
 		else:
 			lookUp = v
 		lookUp.reverse()
@@ -167,9 +92,8 @@ def altSimplexMatricesD(ZDict, K):
 			for candidate in lookUp:#, postfix={"sols: ":len(sols)}):
 				candMatrix = matrixTilNow.augment(candidate)
 				print ("While havin %d solutions investigating \n%s...\n\n"%(len(sols),candMatrix.str()))
-				kernel = candMatrix.right_kernel()
 				for testVec in testVecs:
-					if testVec in kernel:
+					if candMatrix * testVec == 0:
 						break
 				else:
 					if requiredCols != 1:
@@ -178,109 +102,12 @@ def altSimplexMatricesD(ZDict, K):
 						sols.append(candMatrix)
 						print(len(sols))
 	sols=list()
-	verworfen = list()
 	start.reverse()
 	for vec in start:
 		mat = matrix([vec]).transpose()
 		nextCol(mat)
 	
-	return sols,verworfen 
-	
-def findSimplexMatrices(ZDict, K, verbosity=True, save=True, reduced_echelon = True):
-	m = K.degree()
-	m2 = m*2
-	V = K.vector_space()
-	v = [e.list() for e in V]
-	sols=list()
-	v_sorted,vClasses = sortedSumSet(matrix(v).transpose(),verbosity=True, sumUp = False)
-	for i in range(0, m+1):
-		vClasses[i] = [vec.list() for vec in vClasses[i]]
-	
-	progressBarLabels = dict()
-	for i in range(0, m2):
-		progressBarLabels[i] = 0
-	
-	def findNextCol(cols):
-		if verbosity == 2: tqdm.write("Start vector was:")
-		if verbosity == 2: tqdm.write(vector(cols[0]).str())
-		nCols = len(cols)
-		classN = cols[-1][::-1].index(1) if 1 in cols[-1] else m2		# class of last constructed column
-		reqN = m2 - nCols												# columns left to build. at the moment constructing col no. len(cols) + 1
-		
-		def generateLookUp(vecs,colsTilNow):
-			rank = matrix(colsTilNow).rank()
-			lastCol = colsTilNow[-1]
-			lastClass = lastCol[::-1].index(1) if 1 in lastCol else m
-			if verbosity == 2: tqdm.write("last class: %d"%lastClass)
-			### pre-filtering: A we need m steps only vectors of classes lastClass to m and the e of lastClass-1are allowed:
-			lookUp=list()
-			if lastClass != 0 and (m - rank) < reqN:
-				for i in range(lastClass if reduced_echelon else lastClass-1, m+1):
-					lookUp = lookUp + vClasses[i]
-				
-				if reduced_echelon:
-					e = [0 for i in range(0,m)]		## strenge zeilenstufen
-					e[m-lastClass] = 1
-					lookUp.append(e)
-			elif lastClass != 0:
-				e = [0 for i in range(0,m)]		## strenge zeilenstufen
-				e[m-lastClass] = 1
-				lookUp =[e]
-			else:
-				lookUp = vecs
-			
-			return lookUp
-				
-		# check for row echelon and rank
-		lookUp = generateLookUp(v, cols)
-		progressBarLabels[nCols] += 1
-	
-		if verbosity == 2: tqdm.write("We have %d possible vectors to choose from and test."%(len(lookUp)))
-		
-		
-		if(len(lookUp)>0):
-			# Testing against sorted sum set given by ZDict
-			testVecs = ZDict[m2-nCols-1]
-			#for i in range(m2,m2-nCols-2, -1):
-			#	testVecs = testVecs + ZDict[i]
-			testVecs = [vec[:nCols+1] for vec in testVecs]
-			for vec in tqdm(lookUp, postfix = {'#sols': len(sols)}, desc="level %d.%d"%(nCols, progressBarLabels[nCols])):
-				newCols = list(cols)
-				newCols.append(vec)
-				mat = matrix(newCols).transpose()
-				
-				if not evalsZero(mat, testVecs):
-					#print("possible new col :D Until now we found %d complete solutions"%len(sols))
-					if(reqN > 1 ):
-						findNextCol(newCols)
-					elif(reqN == 1):
-						if verbosity == 2: tqdm.write("SUCCESS, now we got #sols: %d"%(len(sols)))
-						if verbosity == 1: tqdm.write(mat.str() + "\n \n")
-						sols.append(mat)
-						if save :
-							with open("sols", "w+") as f:
-								pk.dump(sols, f)
-						
-						#return True # remove later on
-				elif(verbosity == 2):
-					tqdm.write("The following matrix evaluates to zero:")
-					tqdm.write(mat.str())
-					tqdm.write("------------------------------------------------\n")
-		else:
-			tqdm.write("Not enough choices left.")
-		
-	#test run with one start vector choosen at random
-	#vecs.remove(vecs[0])
-	start = [[0 for i in range(0,m)]]
-	e = [0 for i in range(0,m)]
-	e[0] = 1
-	start.append(e)
-	for vec in start:
-		mat = [vec]
-		findNextCol(mat)
-	#mat = [vecs[1]]
-	#findNextCol(mat) 
-	return sols
+	return sols 
 	
 def checkDisjoint(matrixList, H):
 	V = VectorSpace(GF(2), H.ncols())
@@ -378,11 +205,11 @@ h = GFtoBinMatrix(H, m)
 
 
 print("Creating sorted sum set...")
-#z, zeta = sortedSumSet(h.augment(vector([0 for i in range(0,2*m)])), verbosity =True)
+z, zeta = sortedSumSet(h.augment(vector([0 for i in range(0,2*m)])), verbosity =True)
 
 #sols = findSimplexMatrices(zeta, K, verbosity=1) 
-#sols = altSimplexMatrices(zeta, K)
-#dis = checkDisjoint(sols, h)
+sols = altSimplexMatrices(zeta, K)
+dis = checkDisjoint(sols, h)
 
 def f1(x):
 	b = a^(-2)
@@ -392,9 +219,3 @@ def f1(x):
 #F1b = GFtoBinMatrix(F1, m)
 
 #F1L = h.solve_left(F1b).echelon_form()
-
-	
-#debugSimplex(zeta,K,F1L)
-
-#sols, verw = altSimplexMatricesD(zeta,K)
-#checkDisjoint(sols)
