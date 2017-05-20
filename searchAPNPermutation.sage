@@ -116,4 +116,4 @@ def search(workers = 2):
 Sols = search(None)
 
 with open('sols.data','w+') as f:
-	pickle.dump(sols,f)
+	pickle.dump(Sols,f)
