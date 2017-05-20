@@ -3,7 +3,8 @@ try:
 	pk = pickle
 	tqdm = tqdm
 	sleep = sleep
-	Pool = Pool
+	Manager = Manager
+	Process = Process
 	partial = partial
 except NameError:
 	import numpy as np
@@ -11,7 +12,7 @@ except NameError:
 	import sys
 	from tqdm import tqdm
 	from time import sleep
-	from multiprocessing import Pool
+	from multiprocessing import Manager,Process
 	from functools import partial
 
 #from __future__ import print_function
@@ -51,36 +52,6 @@ def GFtoBinMatrix(M, dim):
     A.append(tmpCol)
   return matrix(GF(2),A).transpose()
   
-def nextStep(testVectorLookUp, sols,m2, vClasses,v, baseMatrixV,matrixTilNow):
-	nCols = matrixTilNow.ncols()
-	rank = matrixTilNow.rank()
-	lastCol = matrixTilNow[:,-1].list()
-	requiredCols = m2-nCols
-	lookUp = list() 
-		
-	# Vectors in v, that allow row reduced echelon form:
-	if rank != m and (m-rank) < requiredCols:
-		for i in range(m-rank, m+1):
-			lookUp = lookUp + vClasses[i]
-		lookUp.append(vector(baseMatrixV[rank-m]))
-	elif rank != m :
-		lookUp = [vector(baseMatrixV[rank-m])]
-	else:
-		lookUp = v
-	testVecs = testVectorLookUp[nCols]
-	for candidate in lookUp:
-		candMatrix = matrixTilNow.augment(candidate)
-		print ("While havin %d solutions investigating \n%s...\n\n"%(len(sols),candMatrix.str()))
-		for testVec in testVecs:
-			if candMatrix * testVec == 0:
-				break
-		else:
-			if requiredCols != 1:
-				nextStep(testVectorLookUp, sols, m2, vClasses,v, baseMatrixV, candMatrix)
-			else:
-				sols.append(candMatrix)
-				print(len(sols))
-  
 def SimplexMatrices(ZDict, K, workers = 2):
 	m = K.degree()
 	m2 = m*2
@@ -100,9 +71,8 @@ def SimplexMatrices(ZDict, K, workers = 2):
 		testVecs = [vec[:j+1] for vec in testVecs]
 		testVectorLookUp[j] = testVecs
 		print "\n\n\n"
-		
 	
-	def firstStepLookUp(matrixTilNow):
+	def nextCol(matrixTilNow, ret = False):
 		nCols = matrixTilNow.ncols()
 		rank = matrixTilNow.rank()
 		lastCol = matrixTilNow[:,-1].list()
@@ -119,19 +89,66 @@ def SimplexMatrices(ZDict, K, workers = 2):
 		else:
 			lookUp = v
 		#tqdm.write(matrixTilNow.str() + "\n")
-		return [matrixTilNow.augment(cand) for cand in lookUp] 
+		
+		if(len(lookUp) > 0):
+			tmp = []
+			testVecs = testVectorLookUp[nCols]
+			for candidate in tqdm(lookUp, postfix={"sols: ":len(sols)}):
+				candMatrix = matrixTilNow.augment(candidate)
+				print ("While havin %d solutions investigating \n%s...\n\n"%(len(sols),candMatrix.str()))
+				for testVec in testVecs:
+					if candMatrix * testVec == 0:
+						print("\r evals to zero...")
+						break
+				else:
+					if requiredCols != 1 and ret == True:
+						tmp.append(candMatrix)
+					elif requiredCols !=1:
+						nextCol(candMatrix)
+					else:
+						sols.append(candMatrix)
+						print(len(sols))
+			return tmp
 	
-	lookUps = list()	
-	sols=list()
+	manager = Manager()
+	sols = manager.list()	
+			
 	start.reverse()
+	newStart = []
 	for vec in start:
 		mat = matrix([vec]).transpose()
-		lookUps = lookUps + firstStepLookUp(mat)
-	pool = Pool(processes=workers)
-	func = partial(nextStep,testVectorLookUp,sols,m2,vClasses,v, baseMatrixV)
-	pool.map(func, lookUps)
-	pool.close()
-	return sols 
+		cand = nextCol(mat, True)
+		if cand != None:
+			newStart = newStart +cand
+	while len(newStart) < workers:
+		newStart2 = []
+		for tmpMat in newStart:
+			cand = nextCol(tmpMat, True)
+			if cand != None:
+				newStart2 = newStart2 +cand
+		newStart = newStart2
+	
+	if __name__ =='__main__':
+		workerObjects = []
+		for i in range(0,workers):
+			p = Process(target=nextCol, args=(newStart[i],))
+			newStart.remove(newStart[i])
+			
+			p.start()
+			p.join()
+			workerObjects.append(p)
+		while len(newStart) > 0:
+			for process in workerObjects:
+				if process.exitcode != None:
+					p = Process(target=nextCol, args=(newStart[0],))
+					newStart.remove(newStart[0])
+					
+					p.start()
+					p.join()
+					workerObjects.append(p)
+	
+	return sols 	
+	
 
 def altSimplexMatrices(ZDict, K):
 	m = K.degree()
@@ -292,8 +309,7 @@ h = GFtoBinMatrix(H, m)
 print("Creating sorted sum set...")
 z, zeta = sortedSumSet(h.augment(vector([0 for i in range(0,2*m)])), verbosity =True)
 
-#sols = findSimplexMatrices(zeta, K, verbosity=1) 
-#sols = altSimplexMatrices(zeta, K)
+sols =SimplexMatrices(zeta, K)
 #dis = checkDisjoint(sols, h)
 
 def f1(x):
