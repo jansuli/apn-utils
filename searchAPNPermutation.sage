@@ -1,4 +1,5 @@
 from multiprocessing import Process, Manager 
+from time import time
 import pickle
 m=6
 K.<a> = GF(2^m, 'a')
@@ -24,8 +25,7 @@ def GFtoBinMatrix(M, dim):
   return matrix(GF(2),A).transpose()
 
 upper = GFtoBinMatrix(upper,m)
-manager = Manager()
-sols = manager.list()
+
 
 def nextCol(mat, options,solList):
 	nCols = mat.ncols()
@@ -52,20 +52,29 @@ def nextCol(mat, options,solList):
 		else:
 			print ("%s was in linear dependent.")
 			
-	if nCols < 2^m - 2:
+	if nCols < 2^m-2:
 		for col, opt in lookUp:
 			Mat = mat.augment(col)
-			print("While having %d sols investigating \n%s\n"%(len(solList),Mat.str()))
+			print("While having %d sols, investigating \n%s\n"%(len(solList),Mat.str()))
 			nextCol(Mat, opt, solList)
 	else:
 		for col,opt in lookUp:
-			print("SUCCESS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-			sols.append(mat.augment(col))
+			Mat =mat.augment(col)
+			print("""SUCCESS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			------------------------------------------------------------------------------------------------------------
+			%s
+			------------------------------------------------------------------------------------------------------------"""%((Mat.str())))
+			solList.append(Mat)
+			with open("sols_%.2f.data"%time(), "w+") as f:
+				pickle.dump(sols,f)
 def search(workers = 2):
 	if workers != None:
+		
 		unused = V[1:]
 		workerObj = list()
 		if __name__ =='__main__':
+			manager = Manager()
+			sols = manager.list()
 			for i in range(0,workers):
 				elem = unused[i]
 				lowerCol = matrix( [elem] ).transpose()
@@ -104,7 +113,7 @@ def search(workers = 2):
 			unusedC.remove(elem)
 			nextCol(mat, unusedC, sols)
 			
-sols = search(None)
+Sols = search(None)
 
 with open('sols.data','w+') as f:
 	pickle.dump(sols,f)
