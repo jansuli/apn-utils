@@ -93,7 +93,7 @@ def SimplexMatrices(ZDict, K, workers = 2):
 		if(len(lookUp) > 0):
 			tmp = []
 			testVecs = testVectorLookUp[nCols]
-			for candidate in tqdm(lookUp, postfix={"sols: ":len(sols)}):
+			for candidate in lookUp:
 				candMatrix = matrixTilNow.augment(candidate)
 				#print ("While havin %d solutions investigating \n%s...\n\n"%(len(sols),candMatrix.str()))
 				for testVec in testVecs:
@@ -135,7 +135,7 @@ def SimplexMatrices(ZDict, K, workers = 2):
 			newStart.remove(newStart[i])
 			
 			p.start()
-			p.join()
+			#p.join()
 			workerObjects.append(p)
 		while len(newStart) > 0:
 			for process in workerObjects:
@@ -145,7 +145,7 @@ def SimplexMatrices(ZDict, K, workers = 2):
 					newStart.remove(newStart[0])
 					
 					p.start()
-					p.join()
+					#p.join()
 					workerObjects.append(p)
 					
 					if len(newStart) == 0:
@@ -305,7 +305,7 @@ def sortedSumSet(H, verbosity = False, sumUp = True):
 	return A_sorted, vecSumClassDict
 
 print("Generator Matrix H over finite Field GF(2^m)")
-H = generatorGF(K,f)
+H = generatorGF(K,g)
 print("Binary Generator h.")
 h = GFtoBinMatrix(H, m)
 
@@ -314,10 +314,10 @@ print("Creating sorted sum set...")
 z, zeta = sortedSumSet(h.augment(vector([0 for i in range(0,2*m)])), verbosity =True)
 
 t1 = time()
-sols =SimplexMatrices(zeta, K, workers = 6)
+sols =SimplexMatrices(zeta, K, workers =8)
 t2 = time()
 print("looking for solutions took %.2d seconds"%(t2-t1))
-#dis = checkDisjoint(sols, h)
+dis = checkDisjoint(sols, h)
 
 def f1(x):
 	b = a^(-2)
