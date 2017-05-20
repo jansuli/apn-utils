@@ -11,7 +11,7 @@ except NameError:
 	import pickle as pk
 	import sys
 	from tqdm import tqdm
-	from time import sleep
+	from time import sleep, time
 	from multiprocessing import Manager,Process
 	from functools import partial
 
@@ -95,10 +95,10 @@ def SimplexMatrices(ZDict, K, workers = 2):
 			testVecs = testVectorLookUp[nCols]
 			for candidate in tqdm(lookUp, postfix={"sols: ":len(sols)}):
 				candMatrix = matrixTilNow.augment(candidate)
-				print ("While havin %d solutions investigating \n%s...\n\n"%(len(sols),candMatrix.str()))
+				#print ("While havin %d solutions investigating \n%s...\n\n"%(len(sols),candMatrix.str()))
 				for testVec in testVecs:
 					if candMatrix * testVec == 0:
-						print("\r evals to zero...")
+						#print("\r evals to zero...")
 						break
 				else:
 					if requiredCols != 1 and ret == True:
@@ -140,12 +140,16 @@ def SimplexMatrices(ZDict, K, workers = 2):
 		while len(newStart) > 0:
 			for process in workerObjects:
 				if process.exitcode != None:
+					workerObjects.remove(process)
 					p = Process(target=nextCol, args=(newStart[0],))
 					newStart.remove(newStart[0])
 					
 					p.start()
 					p.join()
 					workerObjects.append(p)
+					
+					if len(newStart) == 0:
+						break
 	
 	return sols 	
 	
@@ -309,7 +313,10 @@ h = GFtoBinMatrix(H, m)
 print("Creating sorted sum set...")
 z, zeta = sortedSumSet(h.augment(vector([0 for i in range(0,2*m)])), verbosity =True)
 
-sols =SimplexMatrices(zeta, K)
+t1 = time()
+sols =SimplexMatrices(zeta, K, workers = 6)
+t2 = time()
+print("looking for solutions took %.2d seconds"%(t2-t1))
 #dis = checkDisjoint(sols, h)
 
 def f1(x):
