@@ -62,34 +62,49 @@ def nextCol(mat, options,solList):
 			print("SUCCESS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 			sols.append(mat.augment(col))
 def search(workers = 2):
-	unused = V[1:]
-	workerObj = list()
-	if __name__ =='__main__':
-		for i in range(0,workers):
-			elem = unused[i]
-			lowerCol = matrix( [elem] ).transpose()
-			mat = upper[:,0].stack(lowerCol)
-			unused.remove(elem)
-			p = Process(target=nextCol, args=(mat, unused, sols))
-			p.start()
-			workerObj.append(p)
-
-	while len(workerObj)>0:
-		for p in workerObj:
-			if p.exitcode != None and len(unused)>0:
-				workerObj.remove(p)
-				p = Process(target=nextCol, args=(mat,unused,sols))
-				elem = unused[0]
+	if workers != None:
+		unused = V[1:]
+		workerObj = list()
+		if __name__ =='__main__':
+			for i in range(0,workers):
+				elem = unused[i]
 				lowerCol = matrix( [elem] ).transpose()
 				mat = upper[:,0].stack(lowerCol)
-				unused.remove(elem)
-				p = Process(target=nextCol, args=(mat, unused, sols))
+				unusedC = list(unused)
+				unusedC.remove(elem)
+				p = Process(target=nextCol, args=(mat, unusedC, sols))
 				p.start()
 				workerObj.append(p)
-			elif p.exitcode != None:
-				workerObj.remove(p)
-				
-	return 	list(sols)
+		i = workers 
+		while len(workerObj)>0:
+			for p in workerObj:
+				if p.exitcode != None and len(unused)>0:
+					i+=1
+					workerObj.remove(p)
+					elem = unused[i]
+					unusedC = list(unused)
+					lowerCol = matrix( [elem] ).transpose()
+					mat = upper[:,0].stack(lowerCol)
+					unusedC.remove(elem)
+					p = Process(target=nextCol, args=(mat, unusedC, sols))
+					p.start()
+					workerObj.append(p)
+				elif p.exitcode != None:
+					workerObj.remove(p)
+					
+		return 	list(sols)
+		
+	else:
+		unused = V[1:]
+		sols = list()
+		for elem in unused:
+			lowerCol = matrix([elem]).transpose()
+			mat = upper[:,0].stack(lowerCol)
+			unusedC = list(unused)
+			unusedC.remove(elem)
+			nextCol(mat, unusedC, sols)
+			
+sols = search(None)
 
 with open('sols.data','w+') as f:
 	pickle.dump(sols,f)
