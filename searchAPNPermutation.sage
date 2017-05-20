@@ -66,7 +66,7 @@ def nextCol(mat, options,solList):
 			------------------------------------------------------------------------------------------------------------"""%((Mat.str())))
 			solList.append(Mat)
 			with open("sols_%.2f.data"%time(), "w+") as f:
-				pickle.dump(sols,f)
+				pickle.dump(solList,f)
 def search(workers = 2):
 	if workers != None:
 		
