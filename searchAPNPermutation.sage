@@ -35,22 +35,29 @@ def nextCol(mat, options,solList):
 		combIndices = Combinations(range(nCols+1), 4)
 	combIndices = [ind for ind in combIndices if nCols in ind and len(ind) > 1]
 	# generate Lookup with apn-requirement
-	columnSpaceBase = list()
+	testMatrices = list()
 	for ind in combIndices:
-		cols = mat[:,ind[:-1]].columns()
-		columnSpaceBase += cols
-	columnSpace = BigV.subspace(columnSpaceBase) 
+		cols = mat[:,ind[:-1]]
+		testMatrices.append(cols)
+	#print testMatrices
+	
 	lookUp = list()
 	upperNew = upper[:,nCols]
 	for option in options:
-		lowerNew = matrix( [option]).transpose()
+		lowerNew = matrix([option]).transpose()
 		colNew = upperNew.stack(lowerNew)
-		if colNew not in columnSpace:
+		for testMatrix in testMatrices:
+			r = (testMatrix.augment(colNew)).rank()
+			if r != 4 and nCols > 3:
+				#print("col linearly dependent %d"%r)
+				break
+			elif r != nCols+1:
+				#print("col linearly dependent %d"%r)
+				break
+		else:
 			optionsCopy = list(options)
 			optionsCopy.remove(option)
 			lookUp.append( (colNew, optionsCopy) )
-		else:
-			print ("%s was in linear dependent.")
 			
 	if nCols < 2^m-2:
 		for col, opt in lookUp:
@@ -112,6 +119,7 @@ def search(workers = 2):
 			unusedC = list(unused)
 			unusedC.remove(elem)
 			nextCol(mat, unusedC, sols)
+		return sols
 			
 Sols = search(None)
 
