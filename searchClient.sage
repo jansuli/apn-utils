@@ -8,7 +8,7 @@ from coding import Matrix
 from galois import GF as GlankGF
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--workers", type=str, dest="workerN")
+parser.add_argument("--workers", type=int, dest="workerN")
 parser.add_argument("--glank", type=bool, dest="glank")
 args = parser.parse_args()
 
