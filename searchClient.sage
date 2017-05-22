@@ -2,7 +2,19 @@ from multiprocessing.managers import BaseManager
 from multiprocessing import Process,current_process
 from Queue import Empty, Full
 from time import sleep
-m=6
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--workers", type=str, dest="workerN")
+args = parser.parse_args()
+
+if args.workerN:
+	workersCount = args.workerN
+else:
+	workersCount = 2
+
+
+m=4
 K.<a> = GF(2^m, 'a')
 V = K.vector_space()
 BigV = VectorSpace(GF(2), m*2)
@@ -125,10 +137,10 @@ def start_workers(job_queue, solutions, nWorkers = 2):
         p.join()
 
 if __name__ == '__main__':
-    manager = make_client_manager('localhost', 3333, 'pwd')
+    manager = make_client_manager('35.187.166.102', 3333, 'pwd')
     JOBS = manager.get_Jobs()
-    print(repr(JOBS))
     SOLS = manager.get_Solutions()
-    initial_jobs(JOBS)
-    start_workers(JOBS,SOLS, nWorkers = 8)
+    if JOBS.qsize() <1:
+        initial_jobs(JOBS)
+    start_workers(JOBS,SOLS, workersCount)
     
