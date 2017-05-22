@@ -82,7 +82,7 @@ def check_options(job_queue ,jobTuple, solutions):
 		    if r != 4 and nCols > 3:
 			    break
 		    elif r != tMat.ncols():
-			    print("\nWith \n%s, broke at \n%s, cause rank is %d vs %d"%(mat.str(),tMat.str(), r, nCols+1))
+			    #print("\nWith \n%s, broke at \n%s, cause rank is %d vs %d"%(mat.str(),tMat.str(), r, nCols+1))
 			    break
 	else:
 	    optionsCopy = list(options)
@@ -92,7 +92,7 @@ def check_options(job_queue ,jobTuple, solutions):
     if nCols < 2^m-2:
         for col, opt in lookUp:
             Mat = mat.augment(col)
-            print("Whilst having %d solutions worker %d appends\n%s\n"%(solutions.qsize(), current_process().pid, Mat.str()))
+            #print("Whilst having %d solutions worker %d appends\n%s\n"%(solutions.qsize(), current_process().pid, Mat.str()))
             try:
 			    job_queue.put_nowait( (2^m-2-nCols, (Mat, opt)) )
             except Full:
@@ -130,6 +130,5 @@ if __name__ == '__main__':
     print(repr(JOBS))
     SOLS = manager.get_Solutions()
     initial_jobs(JOBS)
-    check_worker(JOBS, SOLS)#sleep(10)
-    start_workers(JOBS,SOLS)
+    start_workers(JOBS,SOLS, nWorkers = 8)
     
