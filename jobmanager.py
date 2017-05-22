@@ -12,7 +12,7 @@ def start_Server_JobManager(port, getSaved = False):
         pass
     JobManager.register('get_Jobs', callable=lambda: job_queue)
     JobManager.register('get_Solutions',callable=lambda: solutions)
-    manager = JobManager(address=('localhost',port), authkey = "pwd")
+    manager = JobManager(address=('',port), authkey = "pwd")
     #print("test")
     s = manager.get_server()
     s.serve_forever()
@@ -25,7 +25,7 @@ def print_Server_Stats(port):
 
 		JobManager.register('get_Jobs')
 		JobManager.register('get_Solutions')
-		manager = JobManager(address=('localhost',port ), authkey = "pwd")
+		manager = JobManager(address=('',port ), authkey = "pwd")
 		manager.connect()
 		solutions = manager.get_Solutions()
 		job_queue = manager.get_Jobs()
