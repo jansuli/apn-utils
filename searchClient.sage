@@ -14,7 +14,7 @@ else:
 	workersCount = 2
 
 
-m=4
+m=6
 K.<a> = GF(2^m, 'a')
 V = K.vector_space()
 BigV = VectorSpace(GF(2), m*2)
