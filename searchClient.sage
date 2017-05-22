@@ -1,7 +1,7 @@
 from multiprocessing.managers import BaseManager
 from multiprocessing import Process,current_process
-from Queue import Empty
-
+from Queue import Empty, Full
+from time import sleep
 m=6
 K.<a> = GF(2^m, 'a')
 V = K.vector_space()
@@ -45,25 +45,24 @@ def check_worker(job_queue, solutions):
     to be constructed."""
     while True:
         try:
-            job = job_queue.get_nowait()[1]
-            newJobs = check_options(job, solutions)
-            if newJobs != "Done":
-                for newJob in newJobs:
-                    job_queue.put(newJob)
+            job = job_queue.get_nowait()
+            jobTuple = job[1]
+            check_options(job_queue, jobTuple, solutions)
 
         except Empty:
             print("No more numbers to crunch...")
             return
 
-def check_options(jobTuple, solutions):
+def check_options(job_queue ,jobTuple, solutions):
     mat = jobTuple[0]
     options = jobTuple[1]
-
+    print("------------------------------\n%s\n-------------------------------"%mat.str())
     nCols = mat.ncols()
     if nCols < 3:
-        combIndices = Combinations(range(nCols+1))
+        combIndices = list(range(0,nCols+1))
+        combIndices = [combIndices]
     else:
-	combIndices = Combinations(range(nCols+1), 4)
+		combIndices = Combinations(range(nCols+1), 4)
     combIndices = [ind for ind in combIndices if nCols in ind and len(ind) > 1]
 
     # generate Lookup with apn-requirement
@@ -77,25 +76,27 @@ def check_options(jobTuple, solutions):
     for option in options:
         lowerNew = matrix([option]).transpose()
         colNew = upperNew.stack(lowerNew)
-
-	for testMatrix in testMatrices:
-            r = (testMatrix.augment(colNew)).rank()
-            if r != 4 and nCols > 3:
-		break
-            elif r != nCols+1:
-		break
-            else:
-		optionsCopy = list(options)
-		optionsCopy.remove(option)
-		lookUp.append( (colNew, optionsCopy) )
+        for testMatrix in testMatrices:
+		    tMat = testMatrix.augment(colNew)
+		    r = int(tMat.rank())
+		    if r != 4 and nCols > 3:
+			    break
+		    elif r != tMat.ncols():
+			    print("\nWith \n%s, broke at \n%s, cause rank is %d vs %d"%(mat.str(),tMat.str(), r, nCols+1))
+			    break
+	else:
+	    optionsCopy = list(options)
+	    optionsCopy.remove(option)
+	    lookUp.append( (colNew, optionsCopy) )
 
     if nCols < 2^m-2:
-        returnJobs = list()
         for col, opt in lookUp:
             Mat = mat.augment(col)
             print("Whilst having %d solutions worker %d appends\n%s\n"%(solutions.qsize(), current_process().pid, Mat.str()))
-            returnJobs.append( ( 2^m-2-nCols, (Mat, opt)) )
-        return returnJobs
+            try:
+			    job_queue.put_nowait( (2^m-2-nCols, (Mat, opt)) )
+            except Full:
+				print("something went wrong")
     else:
         for col, opt in lookUp:
             Mat = mat.augment(col)
@@ -110,6 +111,8 @@ def initial_jobs(job_queue):
         unusedCopy = list(unused)
         unusedCopy.remove(elem)
         job_queue.put( (2^m-2 , (mat, unusedCopy)) )
+        print("putting\n%s\n in queue"%mat)
+    sleep(2)
     return
 
 def start_workers(job_queue, solutions, nWorkers = 2):
@@ -127,5 +130,6 @@ if __name__ == '__main__':
     print(repr(JOBS))
     SOLS = manager.get_Solutions()
     initial_jobs(JOBS)
+    check_worker(JOBS, SOLS)#sleep(10)
     start_workers(JOBS,SOLS)
     
