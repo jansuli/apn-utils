@@ -41,7 +41,10 @@ def print_Server_Stats(port):
 					solutions.put(sol)
 				with open("apn_perms_%.2f.data"%time(),"w+") as f:
 					pickle.dump(sols,f)
-			sleep(2)
+				with open("~/index.html","w+") as index:
+					index.write("#sols: %d <br/>Latest being<br/>%s"%(nSols, sols[-1].str()))
+				
+			sleep(10)
     except KeyboardInterrupt:
         print("Saving jobs...")
         jobs = list()
