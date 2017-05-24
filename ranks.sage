@@ -7,7 +7,7 @@ import paramiko
 from scp import SCPClient
 from funcs import functions
 
-env = Environment(loader=FileSystemLoader(r"/home/manuel/sage-7.6/apn-utils"))
+env = Environment(loader=FileSystemLoader(r"/home/users/manuelbb/Desktop/apn-utils"))
 
 template = env.get_template('temp.md')
 
@@ -49,7 +49,7 @@ def updateHomepage(distributions):
 		results= []
 		for i in range(distributions.qsize()):
 			result = distributions.get()
-			res = {'apn' : result[0], 'distribution':result[1]}
+			res = ("| %s | %s |"%(result[0], result[1])).strip('\n')
 			results.append(res)
 			distributions.put(result)
 		t = time()
@@ -64,7 +64,7 @@ def updateHomepage(distributions):
 
 		with SCPClient(ssh.get_transport()) as scp:
 			scp.put('index.md', '~/public/http/index.md')
-		sleep(30)
+		sleep(10)
 
 if __name__ == "__main__":
 	manager = Manager()
