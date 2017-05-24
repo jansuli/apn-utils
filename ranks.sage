@@ -48,15 +48,22 @@ def calcRankDist(jobs, rankQueue):
 def updateHomepage(distributions):
 	while True:
 		results= []
+		dists = {}
 		for i in range(distributions.qsize()):
 			result = distributions.get()
-			res = {'apn':result[0].strip('\n'), 'distribution':result[1]}
+			distribution=str(result[1])
+			res = {'apn':result[0].strip('\n'), 'distribution':distribution}
 			results.append(res)
+			if distribution in dists.keys():
+				dists[distribution] += 1
+			else:
+				dists[distribution] = 1
+			
 			distributions.put(result)
 		t = time()
 		upTime = strftime("%d.%m.%Y, %H:%M:%S")
 		with open("index.html", "w+") as f:
-			f.write(template.render(updateTime =upTime, results = results))
+			f.write(template.render(updateTime =upTime, results = results, distN = dists, cols = len(results))
 		
 		ssh = paramiko.SSHClient()
 		ssh.load_system_host_keys()

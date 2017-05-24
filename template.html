@@ -11,7 +11,12 @@
 	<body class="teal lighten-5">
 	<div class="container teal lighten-3" min-height=90vh>
 	<h1>Results of computations on \(\mathbb F_2^8\)</h1>
-	<p>Last update on {{ updateTime }}</p>
+	<p>Last update on {{ updateTime }}. Refer to my <a href="https://github.com/jansuli/apn-utils">github</a> for sage/python code ("ranks.sage", "funcs.py").
+	<br/>We got {{ cols }} results so far...</p>
+	<ul>
+	{% for dist, N in distN.iteritems() %}
+	<li> {{ dist }} occurs {{ N }} times</li>
+	{% endfor %}</ul>
 	<table class="striped">
 		<thead>
 			<tr>
