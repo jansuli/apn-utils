@@ -71,7 +71,8 @@ if __name__ == "__main__":
 	manager = Manager()
 	rankDists = manager.Queue()
 	jobs = manager.Queue()
-	functions = functions.strip('\n').split(',')
+	functions = functions.split(',')
+	functions = [fun.strip('\n') for fun in functions] 
 	for fun in functions:
 		jobs.put(fun)
 	workers = []
