@@ -63,7 +63,7 @@ def updateHomepage(distributions):
 		t = time()
 		upTime = strftime("%d.%m.%Y, %H:%M:%S")
 		with open("index.html", "w+") as f:
-			f.write(template.render(updateTime =upTime, results = results, distN = dists, cols = len(results))
+			f.write(template.render(updateTime =upTime, results = results, distN = dists, cols = len(results)))
 		
 		ssh = paramiko.SSHClient()
 		ssh.load_system_host_keys()
