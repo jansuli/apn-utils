@@ -35,6 +35,6 @@ for apn in tqdm(functions):
 		r = B.rank()
 		ranks[r] +=1
 		#tqdm.write("%s\n has rank %d."%(B.str(), r))
-	tqdm.write("For apn\n%s\n the distrubution is:"%apn)
+	tqdm.write("For apn\n%s\nthe distrubution is:"%apn)
 	tqdm.write(str(ranks))
 	rankDists[apn] = ranks
