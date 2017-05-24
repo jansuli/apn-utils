@@ -1,0 +1,30 @@
+<html>
+	<head>
+		<title>Results</title>
+		<script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML'></script>
+		
+		<!-- Compiled and minified CSS -->
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.98.2/css/materialize.min.css">
+
+  
+	</head>
+	<body class="teal lighten-5">
+	<div class="container teal lighten-3" min-height=90vh>
+	<h1>Results of computations on \(\mathbb F_2^8\)</h1>
+	<table class="striped">
+		<thead>
+			<tr>
+				<td> APN-Function </td>
+				<td> Rank-Distribution </td>
+			</tr>
+		</thead>
+		<tbody>
+			{% for res in results %}<tr><td> {{ res.apn }}</td><td> {{ res.distribution }} </td></tr>{% endfor %}
+		</tbody>
+	</table>
+
+	<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+	<!-- Compiled and minified JavaScript -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.98.2/js/materialize.min.js"></script>
+	</div></body>
+</html>

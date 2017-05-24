@@ -6,10 +6,11 @@ from jinja2 import Environment, FileSystemLoader
 import paramiko
 from scp import SCPClient
 from funcs import functions
+from imtCredentials import *
 
-env = Environment(loader=FileSystemLoader(r"/home/users/manuelbb/Desktop/apn-utils"))
+env = Environment(loader=FileSystemLoader(r"./"))
 
-template = env.get_template('temp.md')
+template = env.get_template('template.html')
 
 load("classes.sage")
 load("functions_.sage")
@@ -49,22 +50,22 @@ def updateHomepage(distributions):
 		results= []
 		for i in range(distributions.qsize()):
 			result = distributions.get()
-			res = ("| %s | %s |"%(result[0], result[1])).strip('\n')
+			res = {'apn':result[0].strip('\n'), 'distribution':result[1]}
 			results.append(res)
 			distributions.put(result)
 		t = time()
 		upTime = strftime("%d.%m.%Y, %H:%M:%S")
-		with open("index.md", "w+") as f:
+		with open("index.html", "w+") as f:
 			f.write(template.render(updateTime =upTime, results = results))
 		
 		ssh = paramiko.SSHClient()
 		ssh.load_system_host_keys()
 		ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-		ssh.connect('sshgate.uni-paderborn.de', username='manuelbb', password='UnIDMudTsaiEn69^')
+		ssh.connect('sshgate.uni-paderborn.de', username=imtUser, password=imtPwd)
 
 		with SCPClient(ssh.get_transport()) as scp:
-			scp.put('index.md', '~/public/http/index.md')
-		sleep(10)
+			scp.put('index.html', '~/public/http/index.html')
+		sleep(60)
 
 if __name__ == "__main__":
 	manager = Manager()
