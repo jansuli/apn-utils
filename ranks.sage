@@ -56,7 +56,7 @@ def updateHomepage(distributions):
 		for i in range(distributions.qsize()):
 			result = distributions.get()
 			distribution = str(result[1])
-			res = {'apn':result[0], 'distribution':distribution, 'codeDist' : result[2])#, 'Walsh' : result[3]}
+			res = {'apn':result[0], 'distribution':distribution, 'codeDist' : result[2]}#, 'Walsh' : result[3]}
 			results.append(res)
 			if distribution in dists.keys():
 				dists[distribution] += 1
