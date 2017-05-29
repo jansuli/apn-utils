@@ -41,7 +41,7 @@ def codeDistanceFromRanks(rankDist,m):
 					if i == 2^(m-1) + 2^(m-h-k) or i == 2^(m-1) - 2^(m-h-k):
 						weightDist[i] = rankDist[h] * 2^(2*h)
 		else:
-			#weightDist[i] = 0
+			pass#weightDist[i] = 0
 	return weightDist
 	
 def WalshFromRanks(rankDist,m):
