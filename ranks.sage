@@ -42,9 +42,9 @@ def calcRankDist(jobs, rankQueue,m):
 			
 			codeDist = str(codeDistanceFromRanks(ranks, m))
 			Walsh = str(WalshFromRanks(ranks,m))
-			rankQueue.put( (apn, ranks, codeDist, Walsh) )
+			rankQueue.put( (apn, ranks, codeDist) )
 		except SyntaxError:
-			rankQueue.put( (apn,"Threw an error...", "","") )
+			rankQueue.put( (apn,"Threw an error...", "") )
 		except Empty:
 			print("nothing to do")
 			break
@@ -56,7 +56,7 @@ def updateHomepage(distributions):
 		for i in range(distributions.qsize()):
 			result = distributions.get()
 			distribution = str(result[1])
-			res = {'apn':result[0], 'distribution':distribution, 'codeDist' : result[2], 'Walsh' : result[3]}
+			res = {'apn':result[0], 'distribution':distribution, 'codeDist' : result[2])#, 'Walsh' : result[3]}
 			results.append(res)
 			if distribution in dists.keys():
 				dists[distribution] += 1
