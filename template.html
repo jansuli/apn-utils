@@ -22,10 +22,12 @@
 			<tr>
 				<td> APN-Function </td>
 				<td> Rank-Distribution </td>
+				<td> Code Weights</td>
+				<td> Walsh-Spektrum </td>
 			</tr>
 		</thead>
 		<tbody>
-			{% for res in results %}<tr><td> {{ res.apn }}</td><td> {{ res.distribution }} </td></tr>{% endfor %}
+			{% for res in results %}<tr><td> {{ res.apn }}</td><td> {{ res.distribution }} </td> <td> {{ res.codeDist }}</td> <td>{{ res.Walsh }}</td></tr>{% endfor %}
 		</tbody>
 	</table>
 

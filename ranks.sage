@@ -15,12 +15,12 @@ template = env.get_template('template.html')
 load("classes.sage")
 load("functions_.sage")
 
-nWorkers = 4
+nWorkers = 6
 	
 dim = 8
 K.<a> = GF(2^dim, 'a')
 
-def calcRankDist(jobs, rankQueue):
+def calcRankDist(jobs, rankQueue,m):
 	while True:
 		try:
 			apn = jobs.get_nowait()
@@ -36,11 +36,15 @@ def calcRankDist(jobs, rankQueue):
 				r = B.rank()
 				ranks[r] +=1
 				#print("%s\n has rank %d."%(B.str(), r))
+			ranks = rankDistCleanUp(ranks)
 			print("For apn\n%s\nthe distrubution is:"%apn)
 			print(str(ranks))
-			rankQueue.put( (apn, ranks) )
+			
+			codeDist = str(codeDistanceFromRanks(ranks, m))
+			Walsh = str(WalshFromRanks(ranks,m))
+			rankQueue.put( (apn, ranks, codeDist, Walsh) )
 		except SyntaxError:
-			rankQueue.put( (apn,"Threw an error...") )
+			rankQueue.put( (apn,"Threw an error...", "","") )
 		except Empty:
 			print("nothing to do")
 			break
@@ -51,13 +55,12 @@ def updateHomepage(distributions):
 		dists = {}
 		for i in range(distributions.qsize()):
 			result = distributions.get()
-			distribution=str(result[1])
-			res = {'apn':result[0].strip('\n'), 'distribution':distribution}
+			res = {'apn':result[0], 'distribution':result[1], 'codeDist' : result[2], 'Walsh' : result[3]}
 			results.append(res)
-			if distribution in dists.keys():
-				dists[distribution] += 1
+			if result[1] in dists.keys():
+				dists[result[1]] += 1
 			else:
-				dists[distribution] = 1
+				dists[result[1]] = 1
 			
 			distributions.put(result)
 		t = time()
@@ -88,14 +91,15 @@ if __name__ == "__main__":
 	service.start()
 	
 	for i in range(nWorkers):
-		p = Process(target=calcRankDist, args=(jobs, rankDists))
+		p = Process(target=calcRankDist, args=(jobs, rankDists, dim))
 		p.start()
 		workers.append(p)
 	for p in workers:
 		p.join()
 		
 	print("Done with work")
+	sleep(60)
 	service.terminate()
 	
-	with open("rankQueue.data","w+") as f:
+	with open("rankQueue%.2f.data"%time(),"w+") as f:
 		pickle.dump(rankDists, f)
