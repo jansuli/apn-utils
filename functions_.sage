@@ -13,3 +13,54 @@ def alternatingMatrix(form, basis):
 			mat[i,j] = form(basis[i], basis[j])
 	mat = mat + mat.transpose()
 	return mat
+	
+def rankDistCleanUp(rankDist):
+	m = len(rankDist) - 1
+	k = floor(m/2)
+	newRankDist = dict()
+	for i in range(0, k + 1):
+		newRankDist[i] = rankDist[2*i]
+	return newRankDist
+			
+
+def codeDistanceFromRanks(rankDist,m):
+	'''Takes a CLEANED UP rank distribution dict (and dimension m) and returns weight distribution of corresponding RM code CF.'''
+	weightDist = dict()
+	k = len(rankDist) - 1
+	for i in range(0, 2^m + 1):
+		if i%2 == 0:
+			if i == 0 or i == 2^m:
+				weightDist[i] = 1
+			elif i == 2^(m-1):
+				weight = 2^(2*m+1)
+				for h in range(0, k+1):
+					weight -= rankDist[h] * 2^(2*h)
+				weightDist[i] = weight
+			else:
+				for h in range(1,k+1):
+					if i == 2^(m-1) + 2^(m-h-k) or i == 2^(m-1) - 2^(m-h-k):
+						weightDist[i] = rankDist[h] * 2^(2*h)
+		else:
+			weightDist[i] = 0
+	return weightDist
+	
+def WalshFromRanks(rankDist,m):
+	walsh = list()
+	k = len(rankDist) - 1
+	for i in range(0,2^m +1):
+		if i%2==0:
+			if i == 2^m:
+				walsh.append(i)
+			elif i == 0:
+				exp = 2^(2*m)
+				for h in range(0,k+1):
+					exp -= rankDist[h]*2^(2*h)
+				walsh.append(i^exp)
+			else:
+				for h in range(1,k+1):
+					if i == 2^(m-h):
+						walsh.append(i^(rankDist[h]*2^(2*h)))
+		else:
+			walsh.append(0)
+		
+		
