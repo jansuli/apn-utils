@@ -4,7 +4,7 @@ from multiprocessing import Pool, Manager
 from numpy import array_split
 from functools import partial
 import pickle
-m = 8
+m = 6
 q = 2^(m/2)
 
 K.<w> = GF(2^m, 'w')
@@ -49,15 +49,16 @@ def checkPair(sols, pair):
 						# check other way round
 						# precheck
 						if w^(2^kappa + 1)*gamma + a*w^(2^kappa + q)*gamma + b*w^(2^kappa*q+1)*gamma^q + a^q*w^(2^kappa*q+q)*gamma in L:
+							tqdm.write("second preck failed")
 							break
 						else:
 							left= (w^(2^kappa +1)*gamma + a*w^(2^kappa + q)*gamma + b*w^(2^kappa*q+1)*gamma + c*w^(2^kappa*q+q)*gamma + w^(2^kappa*q+q)*gamma^q + a^q*w^(2^kappa*q+1)*gamma^q + b^q*w^(2^kappa +q) *gamma^q + c^q * w^(2^kappa+1) *gamma^q)*(w^(2^kappa)*gamma + a*w^(2^kappa)*gamma + b*w^(2^kappa*q)*gamma + c*w^(2^kappa*q)*gamma + w^(2^kappa*q)*gamma^q +a^q *w^(2^kappa*q)*gamma^q + b^q*w^(2^kappa)*gamma^q + c^q*w^(2^kappa)*gamma^q)^(2^kappa)
 							right = left
 							
 							if left != right:
-								#tqdm.write("nearly...")
+								tqdm.write("nearly...")
 								break
-						
+				
 			else:
 				print("SUCCESS!!!!")
 				sols.append((beta,gamma),(a,b,c))
