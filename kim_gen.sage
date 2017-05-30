@@ -64,20 +64,24 @@ def checkPair(sols, pair):
 				sols.append((beta,gamma),(a,b,c))
 				
 if __name__ == "__main__":
-	pCount = 8
-	chunkCount = len(cands)/(pCount*10)
-	chunks = array_split(cands, chunkCount)
-	chunks = [arr.tolist() for arr in chunks]
-	print chunks[:5]
-	m = Manager()
-	s = m.list()
-	check = partial(checkPair, s)
-	p = Pool(processes=pCount)
-	for chunk in tqdm(chunks):
-		p.map(check,chunk)
-		#p.close()
-		#p.join()
-	p.close()
+	sols = []
+	for pair in tqdm(cands):
+		checkPair(pair,sols)
+
+	#pCount = 8
+	#chunkCount = len(cands)/(pCount*10)
+	#chunks = array_split(cands, chunkCount)
+	#chunks = [arr.tolist() for arr in chunks]
+	#print chunks[:5]
+	#m = Manager()
+	#s = m.list()
+	#check = partial(checkPair, s)
+	#p = Pool(processes=pCount)
+	#for chunk in tqdm(chunks):
+		#p.map(check,chunk)
+		##p.close()
+		##p.join()
+	#p.close()
 	
 	for sol in s:
 		print sol
