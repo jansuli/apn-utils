@@ -45,6 +45,7 @@ def checkPair(sols, pair):
 						break
 						
 					else:
+						tqdm.write("else clause")
 						# check other way round
 						# precheck
 						if w^(2^kappa + 1)*gamma + a*w^(2^kappa + q)*gamma + b*w^(2^kappa*q+1)*gamma^q + a^q*w^(2^kappa*q+q)*gamma in L:
@@ -81,6 +82,6 @@ if __name__ == "__main__":
 		print sol
 		
 	with open("kim_params.data", "w+") as f:
-		pickle.dump(f, s)
+		pickle.dump(s,f)
 				
 
