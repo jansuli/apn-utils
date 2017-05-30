@@ -32,3 +32,14 @@ class APN():
 			b.set_immutable()
 			components[b] = component(b)
 		self.components = components
+		
+	def image(self):
+		if hasattr(self,"img"):
+			return self.img
+		else:
+			self.img = list()
+			for elem in self.domain:
+				res = self.func(elem)
+				if not res in self.img:
+					self.img.append(self.func(elem))
+			return self.img
