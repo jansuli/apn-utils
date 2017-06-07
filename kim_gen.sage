@@ -7,7 +7,7 @@ import pickle
 
 load("functions_.sage")
 
-m = 10
+m = 6
 q = 2^(m/2)
 kappa = 1
 K.<w> = GF(2^m, 'w')
