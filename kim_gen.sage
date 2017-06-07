@@ -116,7 +116,7 @@ for k,v in F1Table.iteritems():
 	F1TableInv[v] = k
 
 apnMatrix = matrix(K,2,0)
-	
+g = dict()
 for vec in LtimesL:
 	#print("%s maps to:"%str(vec))
 	intermediate = F1TableInv[vec]
@@ -126,6 +126,7 @@ for vec in LtimesL:
 	fieldElem = vec[0] + w*vec[1]
 	resElem = res[0] + w*res[1]
 	M = matrix([[fieldElem],[resElem]])
+	g[fieldElem] = resElem
 	print M
 	apnMatrix = apnMatrix.augment( M )
 	#print("%s \n"%str(res))
