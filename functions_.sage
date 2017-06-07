@@ -1,3 +1,16 @@
+def GFtoBinMatrix(M):
+  # iterate over the columns
+  A = []
+  N = M.ncols()
+  for i in range(0, N):
+    col = M[:, i]
+    tmpCol = []
+    for elem in col.list():
+      coeff = vector(elem).list()
+      tmpCol = tmpCol + coeff
+    A.append(tmpCol)
+  return matrix(GF(2),A).transpose()
+  
 def alternatingBilinearForm(func, vecSpace):
 	'''Maps boolean function 'func':F^m -> F (we will later use the component functions) to alternating bilinear form.'''
 	
