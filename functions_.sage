@@ -21,9 +21,11 @@ def checkApnMatrix(mat):
 	indices = list()
 	for a in tqdm(range(n)):
 		for b in range(n):
-			for c in range(n):
-				for e in range(n):
-					if (a != b != c != e): indices.append( [a,b,c,e] )
+			if a!= b:
+				for c in range(n):
+					if a!=b!=c:
+						for e in range(n):
+							if (a != b != c != e): indices.append( [a,b,c,e] )
 	print len(indices)
 	D = d-1
 	print("Looking for indipendent %d columns."%(D))
