@@ -60,8 +60,9 @@ def checkSolution(sol):
 	G = returnFunction(sol,1)
 	for vec in LtimesL:
 		res = K2LtL[ kim(vec) ]
-		if (F(vec),G(vec)) != res:
-			tqdm.write("Trace function components do not match")
+		comp = (F(vec), G(vec))
+		if comp != res:
+			tqdm.write("Trace function components do not match: %s != %s"(str(comp), str(res)))
 			return False
 	else:
 		return True
