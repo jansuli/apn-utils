@@ -67,11 +67,11 @@ def checkSolution(sol):
 	else:
 		return True
 
-def checkPair(sols, pair):
+def checkPair(sols, pair,desc):
 	cont= True
 	gamma = pair[0]
 	beta = pair[1]
-	for a in tqdm(K):
+	for a in tqdm(K, desc="pair %d/%d"%(desc[0], desc[1])):
 		if cont:
 			#print(a)
 			for b in K:
@@ -108,7 +108,7 @@ def checkPair(sols, pair):
 i = 0			
 sols = []
 while len(sols)<1:
-	checkPair(sols,cands[i])
+	checkPair(sols,cands[i],(i, len(cands)))
 	i+=1
 
 #sol=sols[0]
