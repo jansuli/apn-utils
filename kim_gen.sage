@@ -4,7 +4,10 @@ from multiprocessing import Pool, Manager
 from numpy import array_split
 from functools import partial
 import pickle
-m = 6
+
+load("functions_.sage")
+
+m = 10
 q = 2^(m/2)
 kappa = 1
 K.<w> = GF(2^m, 'w')
@@ -42,30 +45,70 @@ def returnFunction(sol, pos):
 		return res
 	return func
 
-cands = []
+#cands = []
 
-print("Find subfield linearly independent scalars gamma, beta:")
-for beta in tqdm(k):
-	for gamma in k:
-		for scalar in L:
-			if beta == scalar*gamma:
-				break
-		else:
-			cands.append( (gamma,beta) )
-print("we have %d such pairs."%len(cands))
+#print("Find subfield linearly independent scalars gamma, beta:")
+#for beta in tqdm(k):
+	#for gamma in k:
+		#for scalar in L:
+			#if beta == scalar*gamma:
+				#break
+		#else:
+			#cands.append( (gamma,beta) )
+#print("we have %d such pairs."%len(cands))
 
 def checkSolution(sol):
 	kim = returnKim(sol)
 	F = returnFunction(sol,0)
 	G = returnFunction(sol,1)
+	
+	g = dict()
 	for vec in LtimesL:
-		res = K2LtL[ kim(vec) ]
+		kRes = kim(vec)
+		res = K2LtL[ kRes ]
 		comp = (F(vec), G(vec))
+		g[LtL2K[vec]] = kRes
 		if comp != res:
 			tqdm.write("Trace function components do not match:\n%s !=\n%s\n"%(str(comp), str(res)))
 			return False
+		#else:
+			#print("%s=\n%s\n"%(str(res),str(comp)))
 	else:
-		return True
+		if checkApnByDefinition(g, K):
+			return True
+		else:
+			return False
+		
+def findGammaBeta():
+	cands = list()
+	genSol = [0,0,K.random_element(), K.random_element(), K.random_element()]
+	kim = returnKim(genSol)
+	for gamma in tqdm(k):
+		genSol[0] = gamma
+		F = returnFunction(genSol, 0)
+		for vec in LtimesL:
+			res = K2LtL[ kim(vec) ]
+			if res[0] != F(vec):
+				break
+		else:
+			print("possible gamma is %s"%(str(gamma)))
+			
+			for beta in k:
+				genSol[1] = beta
+				G = returnFunction(genSol, 1)
+				for vec in LtimesL:
+					res = K2LtL[ kim(vec) ]
+					if res[1] != G(vec):
+						break
+				else:
+					print("possible gamma, beta is %s,%s"%(str(gamma), str(beta)))
+					for scalar in L:
+						if gamma == scalar * beta:
+							break
+					else:
+						print(gamma,beta)
+						cands.append( (gamma,beta))
+	return cands
 
 def checkPair(sols, pair,desc):
 	cont= True
@@ -101,21 +144,18 @@ def checkPair(sols, pair,desc):
 										if checkSolution(sol):
 											tqdm.write("yeah we got it!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 											sols.append( sol )
-											tqdm.write(len(sols))
+											tqdm.write(str(len(sols)))
 											cont = False
 											break
-										
+cands = findGammaBeta()										
 i = 0			
 sols = []
 while len(sols)<1:
 	checkPair(sols,cands[i],(i, len(cands)))
 	i+=1
 
-#sol=sols[0]
-
-#sol = (w^2, w, 0, w, w^9 + w^6 + w^4 + w^3 + w^2 + w)
-
-
+sol=sols[0]
+sol = (w^8 + w^6 + w^5 + w^4 + w^2 + 1, w^7 + w^5 + w^4 + w^3 + w, 0, w^4, w^9 + w^8 + w^5 + w^4 + w^3 + w^2)
 
 # F_1, F_2 affine mappings as in paper
 def returnComp(func,pos):
@@ -126,50 +166,51 @@ def returnComp(func,pos):
 		return ((x,y)[pos], func((x,y)))
 	return F
 
-
+F = returnFunction(sol,0)
+G = returnFunction(sol,1)
+kim = returnKim(sol)
 		
-#print("output of kim function:")
-#for vec in LtimesL:
-	#res = kim(vec)
-	#print K2LtL[res]
-	#print (F(vec), G(vec))
-	#print("\n")
+print("output of kim function:")
+for vec in LtimesL:
+	res = kim(vec)
+	print K2LtL[res]
+	print (F(vec), G(vec))
+	print("\n")
 	
-#F1 = returnComp(F,0)
-#F2 = returnComp(G,1)
+F1 = returnComp(F,0)
+F2 = returnComp(G,1)
 
-#F1Table = dict()
-#F2Table = dict()
+F1Table = dict()
+F2Table = dict()
 
 
-#for vec in tqdm(LtimesL):
-	#res = F1(vec)
-	#if res not in F1Table.values():F1Table[vec] = res		
-#for vec in tqdm(LtimesL):
-	#res = F2(vec)
-	#if res not in F2Table.values():F2Table[vec] = res
+for vec in tqdm(LtimesL):
+	res = F1(vec)
+	if res not in F1Table.values():F1Table[vec] = res		
+for vec in tqdm(LtimesL):
+	res = F2(vec)
+	if res not in F2Table.values():F2Table[vec] = res
 		
-#print len(F1Table)
-#print len(F2Table)
+print len(F1Table)
+print len(F2Table)
 
-#F1TableInv = dict()
-#for k,v in F1Table.iteritems():
-	#F1TableInv[v] = k
+F1TableInv = dict()
+for key,val in F1Table.iteritems():
+	F1TableInv[val] = key
 
-#apnMatrix = matrix(K,2,0)
-#g = dict()
-#for vec in LtimesL:
-	##print("%s maps to:"%str(vec))
-	#intermediate = F1TableInv[vec]
-	#res = F2Table[intermediate]
+apnMatrix = matrix(K,2,0)
+g = dict()
+for vec in LtimesL:
+	#print("%s maps to:"%str(vec))
+	intermediate = F1TableInv[vec]
+	res = F2Table[intermediate]
 	
-	## construct apn field matrix
-	#fieldElem = vec[0] + w*vec[1]
-	#resElem = res[0] + w*res[1]
-	#M = matrix([[fieldElem],[resElem]])
-	#g[fieldElem] = resElem
-	#print M
-	#apnMatrix = apnMatrix.augment( M )
-	##print("%s \n"%str(res))
+	# construct apn field matrix
+	fieldElem = LtL2K[vec]
+	resElem = LtL2K[res]
+	M = matrix([[fieldElem],[resElem]])
+	g[fieldElem] = resElem
+	apnMatrix = apnMatrix.augment( M )
+	#print("%s \n"%str(res))
 	
-#apnMatrix = apnMatrix[:, 1:]
+apnMatrix = apnMatrix[:, 1:]
