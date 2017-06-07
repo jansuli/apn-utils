@@ -31,6 +31,7 @@ def minimumDistance(mat,d, workers=2, chunks=4):
 	n = mat.ncols()
 	
 	if workers == 1:
+		print("Generating combinations...")
 		indices = Combinations(range(n), d-1).list()
 		D = d-1
 		print("Looking for indipendent %d columns."%(D))
@@ -38,6 +39,7 @@ def minimumDistance(mat,d, workers=2, chunks=4):
 			r = mat[:, ind].rank()
 			
 			if r != D:
+				print("failed for indices %s."%str(ind))
 				return False
 		else:
 			print("Every possible combination of 4 different columns is lineary independent.")

@@ -10,18 +10,18 @@ q = 2^(m/2)
 K.<w> = GF(2^m, 'w')
 L = [K(0)] + [e for e in K if e!= 0 and (q-1) % e.multiplicative_order() == 0] # subfield
 k = list(K)
-k.remove(K(0))
+k.remove(K(0))		# for nontrivial trace functions
 
 print L
 
-cands = []
-for beta in tqdm(k):
-	for gamma in k:
-		for scalar in L:
-			if beta == scalar*gamma:
-				break
-		else:
-			cands.append( (gamma,beta) )
+#cands = []
+#for beta in tqdm(k):
+	#for gamma in k:
+		#for scalar in L:
+			#if beta == scalar*gamma:
+				#break
+		#else:
+			#cands.append( (gamma,beta) )
 
 kappa = 1
 
@@ -59,25 +59,30 @@ def checkPair(sols, pair):
 										print(len(sols))
 										cont = False
 										break
-i = 0			
-sols = []
-while len(sols)<1:
-	checkPair(sols,cands[i])
-	i+=1
+#i = 0			
+#sols = []
+#while len(sols)<1:
+	#checkPair(sols,cands[i])
+	#i+=1
 
-sol=sols[0]
+#sol=sols[0]
 
-genericComponent = "(delta + a*delta + b*delta + c * delta + delta^q + a^q*delta^q + b^q*delta^q +c^q*delta^q)*x^(2^kappa+1) +(w*delta +a*w^q*delta+b*w*delta+c*w^q*delta+w^q*delta^q + a^q*w*delta^q + b^q*w^q*delta^q +c^q*w*delta^q)*x^(2^kappa)*y + (w^(2^kappa)*delta+a*w^(2^kappa)*delta+b*w^(2^kappa)*delta+c*w^(2^kappa)*delta+ w^(2^kappa*q)*delta^q+a^q*w^(2^kappa*q)*delta^q+b^q*w^(2^kappa)*delta^q + c^q*w^(2^kappa)*delta^q)*x*y^(2^kappa)+(w^(2^kappa +1)*delta +a*w^(2^kappa + q)*delta + b*w^(2^kappa*q+1)*delta +c*w^(2^kappa*q+q)*delta + w^(2^kappa*q+q)*delta^q + a^q*w^(2^kappa*q+1)*delta^q + b^q*w^(2^kappa+q)*delta^q + c^q *w^(2^kappa+1)*delta^q)*y^(2^kappa +1)"
+sol = (w^2, w, 0, w, w^9 + w^6 + w^4 + w^3 + w^2 + w)
+
+genericComponent = "(delta + a*delta + b*delta + c * delta + delta^q + a^q*delta^q + b^q*delta^q +c^q*delta^q)*x^(2^kappa+1) +(w*delta +a*w^q*delta+b*w*delta+c*w^q*delta+w^q*delta^q + a^q*w*delta^q + b^q*w^q*delta^q +c^q*w*delta^q)*x^(2^kappa)*y + (w^(2^kappa)*delta+a*w^(2^kappa)*delta+b*w^(2^kappa*q)*delta+c*w^(2^kappa*q)*delta+ w^(2^kappa*q)*delta^q+a^q*w^(2^kappa*q)*delta^q+b^q*w^(2^kappa)*delta^q + c^q*w^(2^kappa)*delta^q)*x*y^(2^kappa)+(w^(2^kappa +1)*delta +a*w^(2^kappa + q)*delta + b*w^(2^kappa*q+1)*delta +c*w^(2^kappa*q+q)*delta + w^(2^kappa*q+q)*delta^q + a^q*w^(2^kappa*q+1)*delta^q + b^q*w^(2^kappa+q)*delta^q + c^q *w^(2^kappa+1)*delta^q)*y^(2^kappa +1)"
 
 def returnFunction(sol, pos):
 	'''0 -> gamma, 1 -> beta'''
 	def func((x,y)):
 		res = sage_eval(genericComponent, locals={'delta':sol[pos],'a':sol[2],'b':sol[3], 'c':sol[4], 'x':x, 'y':y, 'w':w, 'q':q, 'kappa':kappa})
+		#print (res in L)
 		return res
 	return func
 	
 F = returnFunction(sol,0)
 G = returnFunction(sol,1)
+
+# F_1, F_2 affine mappings as in paper
 def returnComp(func,pos):
 	def F((x,y)):
 		#print ("Handling %s with return comp: %s."%(str((x,y)),(x,y)[pos])) 
@@ -110,9 +115,19 @@ F1TableInv = dict()
 for k,v in F1Table.iteritems():
 	F1TableInv[v] = k
 
+apnMatrix = matrix(K,2,0)
 	
 for vec in LtimesL:
-	print("%s maps to:"%str(vec))
+	#print("%s maps to:"%str(vec))
 	intermediate = F1TableInv[vec]
 	res = F2Table[intermediate]
-	print("%s \n"%str(res))
+	
+	# construct apn field matrix
+	fieldElem = vec[0] + w*vec[1]
+	resElem = res[0] + w*res[1]
+	M = matrix([[fieldElem],[resElem]])
+	print M
+	apnMatrix = apnMatrix.augment( M )
+	#print("%s \n"%str(res))
+	
+apnMatrix = apnMatrix[:, 1:]
