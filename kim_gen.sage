@@ -4,7 +4,7 @@ from multiprocessing import Pool, Manager
 from numpy import array_split
 from functools import partial
 import pickle
-m = 10
+m = 6
 q = 2^(m/2)
 kappa = 1
 K.<w> = GF(2^m, 'w')
