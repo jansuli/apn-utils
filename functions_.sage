@@ -11,6 +11,41 @@ def GFtoBinMatrix(M):
     A.append(tmpCol)
   return matrix(GF(2),A).transpose()
   
+def checkApnMatrix(mat):
+	''' Taking a the parity check matrix 'mat' of a Code this function returns True if the Code has minimum distance d, else False.
+	
+	It does so by checking each tuple of 4 different columns for linear independce (via matrix rank) and looking for a 5-tuple of linear dependent columns.
+	This process can get quite tedious as for the first step alone we have to check binomial{mat.ncols()}{4} combinations.'''
+	d = 5
+	n = mat.ncols()
+	indices = list()
+	for a in tqdm(range(n)):
+		for b in range(n):
+			for c in range(n):
+				for e in range(n):
+					if (a != b != c != e): indices.append( [a,b,c,e] )
+	print len(indices)
+	D = d-1
+	print("Looking for indipendent %d columns."%(D))
+	for ind in tqdm(indices):
+		r = mat[:, ind].rank()
+		
+		if r != D:
+			print("failed for indices %s."%str(ind))
+			return False
+	else:
+		print("Every possible combination of 4 different columns is lineary independent.")
+		
+	indices = Combinations(range(n), d).list()
+	for ind in tqdm(indices):
+		M = mat[:, ind]
+		
+		if M.rank() != 5:
+			print("Found a combination of d lin. dependent columns:\n" + M.str())
+			return True
+	else:
+		return False
+  
 def alternatingBilinearForm(func, vecSpace):
 	'''Maps boolean function 'func':F^m -> F (we will later use the component functions) to alternating bilinear form.'''
 	
