@@ -61,7 +61,7 @@ def checkSolution(sol):
 	for vec in LtimesL:
 		res = K2LtL[ kim(vec) ]
 		if (F(vec),G(vec)) != res:
-			print("Trace function components do not match")
+			tqdm.write("Trace function components do not match")
 			return False
 	else:
 		return True
@@ -70,7 +70,7 @@ def checkPair(sols, pair):
 	cont= True
 	gamma = pair[0]
 	beta = pair[1]
-	for a in K:
+	for a in tqdm(K):
 		if cont:
 			#print(a)
 			for b in K:
@@ -98,9 +98,9 @@ def checkPair(sols, pair):
 										sol = (gamma,beta,a,b,c)
 										tqdm.write( str(sol))
 										if checkSolution(sol):
-											print("yeah we got it!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+											tqdm.write("yeah we got it!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 											sols.append( sol )
-											print(len(sols))
+											tqdm.write(len(sols))
 											cont = False
 											break
 										
