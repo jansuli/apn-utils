@@ -114,4 +114,26 @@ def WalshFromRanks(rankDist,m):
 			walsh.append(0)
 	return walsh
 		
+def checkApnByDefinition(funcTable, K):
+	K = K.list()
+	k = list(K)
+	k.remove( K(0) )
+	
+	def newFunc(a):
+		def f(x):
+			return funcTable[x+a] + funcTable[x]
+		return f
+
+	for a in tqdm(k):
+		f = newFunc(a)
+		results = list()
+		for x in K:
+			results.append(f(x))
+		for b in K:
+			sols = results.count(b)
+			if sols > 2:
+				print( a,b)
+				return false
+	return True
+			
 		
