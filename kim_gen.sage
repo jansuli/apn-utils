@@ -149,8 +149,8 @@ def checkPair(sols, pair,desc):
 											break
 											
 for a in tqdm(K):
-	for b in K:
-		for c in K:
+	for b in tqdm(K):
+		for c in tqdm(K):
 			sol = [0,0, a,b,c]
 			kim = returnKim(sol)
 			g = dict()
