@@ -147,18 +147,6 @@ def checkPair(sols, pair,desc):
 											tqdm.write(str(len(sols)))
 											cont = False
 											break
-											
-for a in tqdm(K):
-	for b in tqdm(K):
-		for c in tqdm(K):
-			sol = [0,0, a,b,c]
-			kim = returnKim(sol)
-			g = dict()
-			for vec in LtimesL:
-				elem = LtL2K[vec]
-				g[elem] = kim(vec)
-			if checkApnByDefinition(g,K):
-				tqdm.write("%s did lead to an apn"%( str( (a,b,c) )))
 cands = findGammaBeta()										
 i = 0			
 sols = []

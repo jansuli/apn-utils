@@ -114,7 +114,7 @@ def WalshFromRanks(rankDist,m):
 			walsh.append(0)
 	return walsh
 		
-def checkApnByDefinition(funcTable, K):
+def checkApnByDefinitionDict(funcTable, K):
 	k = list(K.list())
 	#k.remove(K(0))
 	
@@ -135,4 +135,23 @@ def checkApnByDefinition(funcTable, K):
 				return False
 	return True
 			
+def checkApnByDefinitionDict(func, K):
+	
+	def returnDerivative(a):
+		def Df(x):
+			return func(x+a) - func(x)
+		return Df
+
+	for a in tqdm(K):
+		if a != 0:
+			f = returnDerivative(a)
+			for b in K:
+				sols = 0
+				for x in K:
+					if f(x) == b:
+						sols += 1
+				if sols > 2:
+					#tqdm.write( a,b, sols)
+					return False
+	return True
 		
