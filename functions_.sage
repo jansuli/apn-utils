@@ -135,7 +135,7 @@ def checkApnByDefinitionDict(funcTable, K):
 				return False
 	return True
 			
-def checkApnByDefinitionDict(func, K):
+def checkApnByDefinition(func, K):
 	
 	def returnDerivative(a):
 		def Df(x):
