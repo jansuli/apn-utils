@@ -142,7 +142,7 @@ def checkApnByDefinitionDict(func, K):
 			return func(x+a) - func(x)
 		return Df
 
-	for a in tqdm(K):
+	for a in tqdm(K, desc="a-iterator"):
 		if a != 0:
 			f = returnDerivative(a)
 			for b in K:
