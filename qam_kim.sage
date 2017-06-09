@@ -120,9 +120,6 @@ for a in tqdm(K.list()[1:], desc='a'):
 				tqdm.write("%s lead to an APN"%(str((a,b,c))))
 				if checkParams((a,b,c),gamma,beta):
 					tqdm.write("they are CCZ equiv to a permutation!!!!!")
-					break
-		break
-	break
 
 
 #cond = False
