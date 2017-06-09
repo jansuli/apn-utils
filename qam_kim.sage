@@ -126,6 +126,7 @@ while True:
 				tqdm.write("they are CCZ equiv to a permutation!!!!!")
 		if apns > 5:
 			a = K.random_element()
+			apns = 0
 
 
 #cond = False
