@@ -112,9 +112,9 @@ def checkQAM( (a,b,c) ):
 	else:
 		return True
 		
-for a in tqdm(K, desc='a'):
-	for b in tqdm(K,desc='b'):
-		for c in tqdm(K,desc='c'):
+for a in tqdm(K.list()[1:], desc='a'):
+	for b in tqdm(K.list()[1:],desc='b'):
+		for c in tqdm(K.list()[1:],desc='c'):
 			apn =checkQAM((a,b,c))
 			if apn:
 				tqdm.write("%s lead to an APN"%(str((a,b,c))))
