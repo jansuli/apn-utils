@@ -115,17 +115,17 @@ def checkQAM( (a,b,c) ):
 a = K.random_element()
 print("a ist %s"%str(a))
 apns = 0
-b = K.random_element()
-for c in tqdm(K.list()[1:],desc='c'):
-	apn = checkQAM((a,b,c))
-	if apn:
-		apns += 1
-		tqdm.write("%s lead to an APN"%(str((a,b,c))))
-		if checkParams((a,b,c),gamma,beta):
-			tqdm.write("they are CCZ equiv to a permutation!!!!!")
-	if apns > 5:
-		a = K.random_element()
-		b = K.random_element()
+while True:
+	b = K.random_element()
+	for c in tqdm(K.list()[1:],desc='c'):
+		apn = checkQAM((a,b,c))
+		if apn:
+			apns += 1
+			tqdm.write("%s lead to an APN"%(str((a,b,c))))
+			if checkParams((a,b,c),gamma,beta):
+				tqdm.write("they are CCZ equiv to a permutation!!!!!")
+		if apns > 5:
+			a = K.random_element()
 
 
 #cond = False
