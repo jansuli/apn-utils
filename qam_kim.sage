@@ -1,4 +1,7 @@
 from tqdm import tqdm
+import pickle
+from time import time
+
 m=10
 q=2^(m/2)
 
@@ -65,20 +68,23 @@ def findGammaBeta():
 ### CCZ permutation condition checks:
 def checkParams( (a,b,c), gamma, beta):
 	kappa = 1
-	pre = beta + a*beta + b*beta + c*beta
-	if not pre in L:
-		if not pre in L:
-			left = (beta+a*beta+b*beta+c*beta+beta^q+a^q*beta^q+b^q*beta^q+c^q*beta^q)*(w*beta + a*w^q*beta + b*w*beta +c*w^q*beta + w^q*beta^q+a^q*w*beta^q + b^q*w^q*beta^q + c^q*w*beta^q)^(2^kappa)
-			right = (beta + a*beta + b*beta + c*beta + beta^q + a^q*beta^q + b^q*beta^q + c^q*beta^q)^(2^kappa) * (w^(2^kappa)*beta +a*w^(2^kappa)*beta+b*w^(2^kappa*q)*beta +c*w^(2^kappa *q)*beta + w^(2^kappa *q)*beta^q + a^q *w^(2^kappa *q)*beta^q + b^q *w^(2^kappa)*beta^q + c^q *w^(2^kappa)*beta^q)
-			
-			if left == right:
-				pre=(w^(2^kappa + 1))*gamma + a*(w^(2^kappa + q))*gamma + b*(w^(2^kappa*q+1))*gamma + c*(w^(2^kappa*q+q))*gamma
-				if not pre in L:
-					left= (w^(2^kappa +1)*gamma + a*w^(2^kappa + q)*gamma + b*w^(2^kappa*q+1)*gamma + c*w^(2^kappa*q+q)*gamma + w^(2^kappa*q+q)*gamma^q + a^q*w^(2^kappa*q+1)*gamma^q + b^q*w^(2^kappa +q) *gamma^q + c^q * w^(2^kappa+1) *gamma^q)*(w^(2^kappa)*gamma + a*w^(2^kappa)*gamma + b*w^(2^kappa*q)*gamma + c*w^(2^kappa*q)*gamma + w^(2^kappa*q)*gamma^q +a^q *w^(2^kappa*q)*gamma^q + b^q*w^(2^kappa)*gamma^q + c^q*w^(2^kappa)*gamma^q)^(2^kappa)
-					right = (w^(2^kappa + 1)*gamma + a*w^(2^kappa + q) *gamma + b*w^(2^kappa * q +1)*gamma +c*w^(2^kappa *q+q)*gamma +w^(2^kappa*q+q)*gamma^q + a^q *w^(2^kappa*q+1)*gamma^q + b^q*w^(2^kappa+q)*gamma^q + c^q*w^(2^kappa +1)*gamma^q)^(2^kappa) * ( w*gamma + a*w^q + b*w*gamma + c*w^q *gamma+ w^q*gamma^q + a^q*w^q*gamma^q + b^q*w^q*gamma^q + c^q*w*gamma^q ) 
-					
-					if left == right:
-						return True
+	factor1 = (beta+a*beta+b*beta+c*beta+beta^q+a^q*beta^q+b^q*beta^q+c^q*beta^q)
+	if factor1 != 0:
+		#tqdm.write("first check successfull")
+		left = factor1*(w*beta + a*w^q*beta + b*w*beta +c*w^q*beta + w^q*beta^q+a^q*w*beta^q + b^q*w^q*beta^q + c^q*w*beta^q)^2
+		right = factor1^2 * (w^2*beta +a*w^2*beta+b*w^64*beta +c*w^64*beta + w^64*beta^q + a^q *w^64*beta^q + b^q *w^2*beta^q + c^q *w^2*beta^q)
+		
+		if left == right:
+			#tqdm.write("second check successfull")
+			#pre=(w^(2^kappa + 1))*gamma + a*(w^(2^kappa + q))*gamma + b*(w^(2^kappa*q+1))*gamma + c*(w^(2^kappa*q+q))*gamma
+			factor2 = (w^3*gamma + a*w^34*gamma + b*w^65*gamma + c*w^96*gamma + w^96*gamma^q + a^q*w^65*gamma^q + b^q*w^34 *gamma^q + c^q * w^3 *gamma^q)
+			if factor2 != 0:
+				#tqdm.write("third check successfull")
+				left= factor2*(w^2*gamma + a*w^2*gamma + b*w^64*gamma + c*w^64*gamma + w^64*gamma^q +a^q *w^64*gamma^q + b^q*w^2*gamma^q + c^q*w^2*gamma^q)^2
+				right = factor2^2 * ( w*gamma + a*w^q + b*w*gamma + c*w^q *gamma+ w^q*gamma^q + a^q*w^q*gamma^q + b^q*w^q*gamma^q + c^q*w*gamma^q ) 
+				
+				if left == right:
+					return True
 	return False
 
 
@@ -114,19 +120,22 @@ def checkQAM( (a,b,c) ):
 		
 a = K.random_element()
 print("a ist %s"%str(a))
-apns = 0
+switch = 0
 while True:
+	tqdm.write("new round!!!")
 	b = K.random_element()
-	for c in tqdm(K.list()[1:],desc='c'):
+	a = K.random_element()
+	#switch +=1
+	for c in tqdm(K,desc='c'):
 		apn = checkQAM((a,b,c))
 		if apn:
-			apns += 1
-			tqdm.write("%s lead to an APN"%(str((a,b,c))))
+			tqdm.write("%s lead to an apn"%(str((a,b,c))))
 			if checkParams((a,b,c),gamma,beta):
-				tqdm.write("they are CCZ equiv to a permutation!!!!!")
-		if apns > 5:
-			a = K.random_element()
-			apns = 0
+				tqdm.write("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Equiv to a permutation !!!!!!!!!!!!!!!!!!!!!!!!!")
+				with open("PERMUTATION%f.DATA"%time(),"w") as f:
+					pickle.dump( (a,b,c), f)
+			else:
+				tqdm.write("sadly not ccz to a permutation...")
 
 
 #cond = False
