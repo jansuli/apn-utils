@@ -120,22 +120,27 @@ def checkQAM( (a,b,c) ):
 		
 a = K.random_element()
 print("a ist %s"%str(a))
-switch = 0
-while True:
-	tqdm.write("new round!!!")
-	b = K.random_element()
-	a = K.random_element()
-	#switch +=1
-	for c in tqdm(K,desc='c'):
-		apn = checkQAM((a,b,c))
-		if apn:
-			tqdm.write("%s lead to an apn"%(str((a,b,c))))
-			if checkParams((a,b,c),gamma,beta):
-				tqdm.write("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Equiv to a permutation !!!!!!!!!!!!!!!!!!!!!!!!!")
-				with open("PERMUTATION%f.DATA"%time(),"w") as f:
-					pickle.dump( (a,b,c), f)
-			else:
-				tqdm.write("sadly not ccz to a permutation...")
+apns = list()
+try:
+	while True:
+		tqdm.write("new round!!!")
+		b = K.random_element()
+		a = K.random_element()
+		#switch +=1
+		for c in tqdm(K,desc='c'):
+			apn = checkQAM((a,b,c))
+			if apn:
+				tqdm.write("%s lead to an apn"%(str((a,b,c))))
+				apns.append( (a,b,c))
+				if checkParams((a,b,c),gamma,beta):
+					tqdm.write("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Equiv to a permutation !!!!!!!!!!!!!!!!!!!!!!!!!")
+					with open("PERMUTATION%f.DATA"%time(),"w") as f:
+						pickle.dump( (a,b,c), f)
+				else:
+					tqdm.write("sadly not ccz to a permutation...")
+except KeyboardInterrupt:
+	with open("apns","w") as f:
+		pickle.dump(apns, f)
 
 
 #cond = False
