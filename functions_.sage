@@ -151,7 +151,12 @@ def checkApnByDefinition(func, K):
 					if f(x) == b:
 						sols += 1
 				if sols > 2:
-					#tqdm.write( a,b, sols)
+					print( a,b, sols)
 					return False
 	return True
+	
+def uniKim( (a,b,c) ):
+	def kim(x):
+		return sage_eval("x^3 + a*x^32 + b*x^65 + c*x^96", locals={'a':a,'b':b,'c':c, 'x':x})
+	return kim
 		
