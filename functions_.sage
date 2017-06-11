@@ -159,4 +159,28 @@ def uniKim( (a,b,c) ):
 	def kim(x):
 		return sage_eval("x^3 + a*x^32 + b*x^65 + c*x^96", locals={'a':a,'b':b,'c':c, 'x':x})
 	return kim
+	
+def thouroghCheckQAM( (a,b,c) ):
+	
+	C = matrix(K, m)
+
+	C[5,1] = C[1,5] = a
+	C[6,0] = C[0,6] = b
+	C[6,5] = C[5,6] = c
+
+	H = M.transpose() * C * M
+	
+	cols = H.columns()
+	B = V.subspace(cols)
+	for vec in B:
+		if vec != 0:
+			rCheck = matrix(vector(vec[0]))
+			for elem in vec[1:]:
+				rCheck = rCheck.stack(vector(elem))
+			r = rCheck.rank()
+			if r != m-1:
+				tqdm.write(str(r))
+				return False
+	else:
+		return True
 		
