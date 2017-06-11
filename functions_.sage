@@ -160,6 +160,11 @@ def uniKim( (a,b,c) ):
 		return sage_eval("x^3 + a*x^32 + b*x^65 + c*x^96", locals={'a':a,'b':b,'c':c, 'x':x})
 	return kim
 	
+M = matrix(K, m)
+for i in range(10):
+	for j in range(10):
+		M[i,j] = (w^j)^(2^i)
+	
 def thouroghCheckQAM( (a,b,c) ):
 	
 	C = matrix(K, m)
