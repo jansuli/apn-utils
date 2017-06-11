@@ -123,7 +123,7 @@ def checkQAM( (a,b,c) ):
 apns = list()
 try:
 	for a in tqdm(K, desc="a"):
-		for b in tqdm(K, decs="b"):
+		for b in tqdm(K, desc="b"):
 			for c in tqdm(K,desc='c'):
 				params = checkParams((a,b,c),gamma,beta) 
 				if params:
