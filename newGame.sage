@@ -66,7 +66,7 @@ def chooseNext(trees):
 			
 # Initialization
 trees = list()
-for i in tqdm(range(0,2)):#2^m-1), desc="Initiator"):
+for i in tqdm(range(0,2^m-1), desc="Initiator"):
 	elem = w^i
 	
 	possibleOptions = copy(K.list())
@@ -117,10 +117,10 @@ while N < 2^m-1:
 		option = optionTree.elem
 		newCol = matrix(F, vector(w^N).list() + vector(option).list()).transpose()
 		testMatrix = initialMatrix.augment(newCol)
-		optionsLeft = [elem for elem in K if elem != 0 and elem not in lower]
+		optionsLeft = [elem for elem in K if elem != 0 and elem not in lower + [option]]
 		for opt in optionsLeft:
-			if checkOption(initialMatrix,opt):
+			if checkOption(testMatrix,opt):
 				newTree=Tree(opt,parent=optionTree)
-				optionTree.children.append(opt)
+				optionTree.children.append(newTree)
 		trees.append(optionTree)
 			
