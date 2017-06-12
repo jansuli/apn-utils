@@ -68,13 +68,14 @@ def chooseNext(trees):
 trees = list()
 for i in tqdm(range(0,2^m-1), desc="Initiator"):
 	elem = w^i
-	elemTree = Tree(elem)
-	children = []
+	
 	possibleOptions = copy(K.list())
 	if K(0) in possibleOptions:
 		possibleOptions.remove(K(0))
 	
 	for option in tqdm(possibleOptions):
+		elemTree = Tree(option)
+		children = []
 		optionsLeft = copy(possibleOptions)
 		optionsLeft.remove(elemTree.elem)
 		
@@ -87,8 +88,8 @@ for i in tqdm(range(0,2^m-1), desc="Initiator"):
 				optTree = Tree(opt,parent=elemTree)
 				children.append(optTree)
 	
-	elemTree.children = children
-	trees.append(elemTree)
+		elemTree.children = children
+		trees.append(elemTree)
 
 N = 0
 while N < 2^m-1:
@@ -114,9 +115,10 @@ while N < 2^m-1:
 	
 	for optionTree in tqdm(tree.children, desc="Options"):
 		option = optionTree.elem
+		newTree = Tree(option)
 		optionsLeft = [elem for elem in K if elem != 0 and elem not in lower]
 		for opt in optionsLeft:
 			if checkOption(initialMatrix,opt):
-				optionTree.children.append(opt)
-		trees.append(optionTree)
+				newTreeTree.children.append(opt)
+		trees.append(newTree)
 			
