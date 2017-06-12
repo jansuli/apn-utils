@@ -89,7 +89,7 @@ for i in tqdm(range(0,2)):#2^m-1), desc="Initiator"):
 				children.append(optTree)
 	
 		elemTree.children = children
-		trees.append(optTree)
+		trees.append(elemTree)
 
 N = 0
 while N < 2^m-1:
@@ -115,10 +115,12 @@ while N < 2^m-1:
 	
 	for optionTree in tqdm(tree.children, desc="Options"):
 		option = optionTree.elem
-		newTree = Tree(option)
+		newCol = matrix(F, vector(w^N).list() + vector(option).list()).transpose()
+		testMatrix = intialMatrix.augment(newCol)
 		optionsLeft = [elem for elem in K if elem != 0 and elem not in lower]
 		for opt in optionsLeft:
 			if checkOption(initialMatrix,opt):
-				newTreeTree.children.append(opt)
-		trees.append(newTree)
+				newTree(opt,parent=optionTree)
+				optionTree.children.append(opt)
+		trees.append(optionTree)
 			
