@@ -120,7 +120,7 @@ while N < 2^m-1:
 		optionsLeft = [elem for elem in K if elem != 0 and elem not in lower]
 		for opt in optionsLeft:
 			if checkOption(initialMatrix,opt):
-				newTree(opt,parent=optionTree)
+				newTree=Tree(opt,parent=optionTree)
 				optionTree.children.append(opt)
 		trees.append(optionTree)
 			
