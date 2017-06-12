@@ -66,7 +66,7 @@ def chooseNext(trees):
 			
 # Initialization
 trees = list()
-for i in tqdm(range(0,2^m-1), desc="Initiator"):
+for i in tqdm(range(0,2)):#2^m-1), desc="Initiator"):
 	elem = w^i
 	
 	possibleOptions = copy(K.list())
@@ -89,7 +89,7 @@ for i in tqdm(range(0,2^m-1), desc="Initiator"):
 				children.append(optTree)
 	
 		elemTree.children = children
-		trees.append(elemTree)
+		trees.append(optTree)
 
 N = 0
 while N < 2^m-1:
