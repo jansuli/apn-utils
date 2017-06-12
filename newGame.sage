@@ -116,7 +116,7 @@ while N < 2^m-1:
 	for optionTree in tqdm(tree.children, desc="Options"):
 		option = optionTree.elem
 		newCol = matrix(F, vector(w^N).list() + vector(option).list()).transpose()
-		testMatrix = intialMatrix.augment(newCol)
+		testMatrix = initialMatrix.augment(newCol)
 		optionsLeft = [elem for elem in K if elem != 0 and elem not in lower]
 		for opt in optionsLeft:
 			if checkOption(initialMatrix,opt):
