@@ -2,8 +2,9 @@ import multiprocessing as mp
 from time import time
 import pickle
 from numpy import random, array_split
+from functools import partial
 
-m = 6
+m = 5
 F = GF(2)
 K.<w> = GF(2^m, 'w')
 V = VectorSpace(F, 2*m) 		# linear independence checking
@@ -30,7 +31,7 @@ class Tree():
 				children = None
 		return depth
 		
-def leafWorker(leaf, nWorkers = 8):
+def leafWorker(leaf, nWorkers):
 	used = [leaf.elem]
 	parent = leaf.parent
 	while parent != None:
@@ -40,6 +41,7 @@ def leafWorker(leaf, nWorkers = 8):
 	# Generate Matrix up til now
 	nCols = len(used)
 	used.reverse()
+	#print used
 	lower = matrix(GF(2), [vector(opt) for opt in used] ).transpose()
 	upper = matrix(GF(2), [vector(w^i) for i in range(nCols)]).transpose()
 	mat = upper.stack(lower)
@@ -48,14 +50,20 @@ def leafWorker(leaf, nWorkers = 8):
 	options	= [elem for elem in K if elem not in used and elem != K(0)]
 	print("Now investigating %d options to append to \n%s."%(len(options),mat.str()))
 	children = []
-	for option in options:
-		if checkOption(mat, option, nWorkers):
+	checkFunc = partial(checkOption, mat)
+	p = mp.Pool()
+	validOptions = p.map(checkFunc, options)
+	for option in validOptions:
+		if option != None:
 			children.append(Tree(option, leaf))
-	return children
+	if len(children)> 0:
+		return children
+	else:
+		return None
 			
 def updateTreeMulti(tree, maxDepth = 3, nWorkers = mp.cpu_count(), leavesMax = floor(mp.cpu_count()/2)):
 	depth = tree.depth()
-	print("Tree depth is %d"%depth)
+	#print("Tree depth is %d"%depth)
 	while depth < maxDepth:
 		if depth != 0:
 			leaves = nodesOfRelDepth(tree, depth)
@@ -161,18 +169,21 @@ for i in range(4, 2^m):
 	indices[i] = Combinations(i, 4).list()
 print("Done, proceeding.")
 
-def checkOption(mat, opt, nWorkers): 		
+def checkOption(mat, opt): 		
 	# vector to add to matrix
+	#print("Checking")
+	#print(opt)
 	N = mat.ncols()
 	newColUpper = list(vector(w^N))
 	newColLower = list(vector(opt))
 	newCol = matrix(F, newColUpper+newColLower).transpose()
 	
 	newMat = mat.augment(newCol)
-	res = checkRanksMulti(newMat, nWorkers)
-	#if res:
-		#print("\n%s\n works"%newMat.str())
-	return res
+	
+	if checkRanks(mat):
+		return opt
+	else:
+		return None
 	
 def checkRanks(mat):
 	N = mat.ncols()
@@ -191,55 +202,16 @@ def checkRanks(mat):
 		else:
 			return True	
 
-def checkRanksMulti(mat, nWorkers):
-	N = mat.ncols()
-	if N < 4:
-		cols = mat.columns()
-		if V.are_linearly_dependent(cols):
-			return False
-		else:
-			return True
-	else:
-		inds = indices[N]
-		print("Splitting in %d..."%nWorkers)
-		chunks = array_split(inds, nWorkers)
-		chunks = [chunk.tolist() for chunk in chunks]
-		workers = []
-		manager = mp.Manager()
-		returnVals = manager.list()
-		for chunk in chunks:
-			p = mp.Process(target=checkIndices, args=(mat, chunk,returnVals))
-			p.start()
-			workers.append(p)
-			
-		while True:
-			for worker in workers:
-				if not worker.is_alive():
-					workers.remove(worker)
-					break
-			if False in returnVals and len(workers) > 0:
-				print("Terminating processes")
-				for worker in workers:
-					worker.terminate()
-					workers.remove(worker)
-				return False
-			elif False not in returnVals and len(workers) == 0:
-				return True
-
-def checkIndices(mat, indexList, retVals):
-	for ind in indexList:
-		cols = mat[:, ind].columns()
-		if V.are_linearly_dependent(cols):	# faster than rank checking it seems
-			retVals.append(False)
-			return 
-	else:
-		return 
-
 	
 root = Tree(K(0))
 nCols = 0
 maxDepth = 3
 newRoot = root
+
+if mp.cpu_count() > 8:
+	nWorkers = 8
+else:
+	nWorkers = mp.cpu_count()
 
 def chooseNewRoot(parent, maxDepth):
 	if parent.children != []:
@@ -253,7 +225,7 @@ def chooseNewRoot(parent, maxDepth):
 		return False
 	
 while nCols < 2^m - 1:
-	if updateTreeMulti(newRoot, maxDepth, 9):
+	if updateTreeMulti(newRoot, maxDepth, nWorkers):
 		## Select new root among children
 		newRoot = chooseNewRoot(newRoot, maxDepth)
 		
@@ -296,6 +268,7 @@ if len(sols) > 0:
 	## Generate Matrix up til now
 	nCols = len(used)
 	used.reverse()
+	print used
 	lower = matrix(GF(2), [vector(opt) for opt in used] ).transpose()
 	upper = matrix(GF(2), [vector(w^i) for i in range(nCols)]).transpose()
 	mat = upper.stack(lower)
