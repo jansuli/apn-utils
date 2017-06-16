@@ -1,7 +1,7 @@
 import multiprocessing as mp
 from time import time
 import pickle
-from numpy import random
+from numpy import random, array_split
 
 m = 6
 F = GF(2)
@@ -30,7 +30,7 @@ class Tree():
 				children = None
 		return depth
 		
-def leafWorker(leaf):
+def leafWorker(leaf, nWorkers = 8):
 	used = [leaf.elem]
 	parent = leaf.parent
 	while parent != None:
@@ -49,11 +49,11 @@ def leafWorker(leaf):
 	print("Now investigating %d options to append to \n%s."%(len(options),mat.str()))
 	children = []
 	for option in options:
-		if checkOption(mat, option):
+		if checkOption(mat, option, nWorkers):
 			children.append(Tree(option, leaf))
 	return children
 			
-def updateTreeMulti(tree, maxDepth = 3, nWorkers = mp.cpu_count(), leavesMax = mp.cpu_count()):
+def updateTreeMulti(tree, maxDepth = 3, nWorkers = mp.cpu_count(), leavesMax = floor(mp.cpu_count()/2)):
 	depth = tree.depth()
 	print("Tree depth is %d"%depth)
 	while depth < maxDepth:
@@ -61,12 +61,14 @@ def updateTreeMulti(tree, maxDepth = 3, nWorkers = mp.cpu_count(), leavesMax = m
 			leaves = nodesOfRelDepth(tree, depth)
 			
 			if __name__ == "__main__":
-				p = mp.Pool(processes= nWorkers)
+				#p = mp.Pool(processes= nWorkers)
 				if len(leaves) > leavesMax: leaves = random.choice(leaves, leavesMax).tolist()
-				res = p.map(leafWorker, leaves)
-				for i in range(len(leaves)):
-					if len(res[i]) > 0:
-						leaves[i].children = res[i]
+				for leaf in leaves:
+					leaf.children = leafWorker(leaf, nWorkers)
+				#res = p.map(leafWorker, leaves)
+				#for i in range(len(leaves)):
+					#if len(res[i]) > 0:
+						#leaves[i].children = res[i]
 				
 			newDepth = tree.depth()
 			if newDepth != depth:
@@ -156,10 +158,10 @@ def nodesOfRelDepth(root, depth, currentDepth = 0):
 print("Generating indices for later...")
 indices = dict()
 for i in range(4, 2^m):
-	indices[i] = Combinations(i, 4)
+	indices[i] = Combinations(i, 4).list()
 print("Done, proceeding.")
 
-def checkOption(mat, opt): 		
+def checkOption(mat, opt, nWorkers): 		
 	# vector to add to matrix
 	N = mat.ncols()
 	newColUpper = list(vector(w^N))
@@ -167,7 +169,7 @@ def checkOption(mat, opt):
 	newCol = matrix(F, newColUpper+newColLower).transpose()
 	
 	newMat = mat.augment(newCol)
-	res = checkRanks(newMat)
+	res = checkRanksMulti(newMat, nWorkers)
 	#if res:
 		#print("\n%s\n works"%newMat.str())
 	return res
@@ -188,7 +190,49 @@ def checkRanks(mat):
 				return False
 		else:
 			return True	
+
+def checkRanksMulti(mat, nWorkers):
+	N = mat.ncols()
+	if N < 4:
+		cols = mat.columns()
+		if V.are_linearly_dependent(cols):
+			return False
+		else:
+			return True
+	else:
+		inds = indices[N]
+		chunks = array_split(inds, nWorkers)
+		chunks = [chunk.tolist() for chunk in chunks]
+		workers = []
+		manager = mp.Manager()
+		returnVals = manager.list()
+		for chunk in chunks:
+			p = mp.Process(target=checkIndices, args=(mat, chunk,returnVals))
+			p.start()
+			workers.append(p)
 			
+		while True:
+			for worker in workers:
+				if not worker.is_alive():
+					workers.remove(worker)
+					break
+			if False in returnVals and len(workers) > 0:
+				print("Terminating processes")
+				for worker in workers:
+					worker.terminate()
+					workers.remove(worker)
+				return False
+			elif False not in returnVals and len(workers) == 0:
+				return True
+
+def checkIndices(mat, indexList, retVals):
+	for ind in indexList:
+		cols = mat[:, ind].columns()
+		if V.are_linearly_dependent(cols):	# faster than rank checking it seems
+			retVals.append(False)
+			return 
+	else:
+		return 
 
 	
 root = Tree(K(0))
@@ -208,7 +252,7 @@ def chooseNewRoot(parent, maxDepth):
 		return False
 	
 while nCols < 2^m - 1:
-	if updateTreeMulti(newRoot, maxDepth):
+	if updateTreeMulti(newRoot, maxDepth, 9):
 		## Select new root among children
 		newRoot = chooseNewRoot(newRoot, maxDepth)
 		
