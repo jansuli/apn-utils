@@ -210,6 +210,7 @@ nCols = 0
 maxDepth = 3
 newRoot = root
 suckingTolerance = 0
+firstStage = []
 
 if mp.cpu_count() > 8:
 	nWorkers = 8
@@ -234,7 +235,7 @@ while nCols < 2^m - 1:
 		
 		if newRoot:
 			if newRoot in root.children:
-				firstStage = newRoot
+				firstStage.append(newRoot)
 			if nCols == 0:
 				nCols = maxDepth
 			else:
@@ -260,14 +261,15 @@ while nCols < 2^m - 1:
 					newRoot = newRoot.parent
 					nCols -= 1
 		else:
-			root.children.remove(firstStage)
+			root.children.remove(firstStage[-1])
 			newRoot = choose(root, maxDepth)
 			if  newRoot:
 				suckingTolerance = 0
-				root.children.append(firstStage)
 				nCols = 0
 			else:
 				break
+for opt in firstStage:
+	root.children.append(opt)
 			
 ## print a Solution
 sols = nodesOfRelDepth(root, 2^m - 1)
