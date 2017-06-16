@@ -1,5 +1,7 @@
 import multiprocessing as mp
 from time import time
+import pickle
+from numpy import random
 
 m = 6
 F = GF(2)
@@ -51,7 +53,7 @@ def leafWorker(leaf):
 			children.append(Tree(option, leaf))
 	return children
 			
-def updateTreeMulti(tree, maxDepth = 3, nWorkers = mp.cpu_count()):
+def updateTreeMulti(tree, maxDepth = 3, nWorkers = mp.cpu_count(), leavesMax = mp.cpu_count()):
 	depth = tree.depth()
 	print("Tree depth is %d"%depth)
 	while depth < maxDepth:
@@ -60,6 +62,7 @@ def updateTreeMulti(tree, maxDepth = 3, nWorkers = mp.cpu_count()):
 			
 			if __name__ == "__main__":
 				p = mp.Pool(processes= nWorkers)
+				if len(leaves) > leavesMax: leaves = random.choice(leaves, leavesMax).tolist()
 				res = p.map(leafWorker, leaves)
 				for i in range(len(leaves)):
 					if len(res[i]) > 0:
@@ -210,8 +213,6 @@ while nCols < 2^m - 1:
 		newRoot = chooseNewRoot(newRoot, maxDepth)
 		
 		if newRoot:
-			if newRoot in root.children:
-				firstStage = newRoot
 			if nCols == 0:
 				nCols = maxDepth
 			else:
@@ -220,9 +221,21 @@ while nCols < 2^m - 1:
 			print("No options left on first stage.")
 			break
 	else:
-		root.children.remove(firstStage)
-		newRoot = root
-		nCols = 0
+		while newRoot.parent != None:
+			if newRoot.parent.children != None:
+				newRoot.parent.children.remove(newRoot)
+				newestRoot = chooseNewRoot(newRoot.parent, maxDepth)
+				if newestRoot:
+					newRoot.parent.children.append(newRoot)
+					newRoot = newestRoot
+					break
+				else:
+					newRoot = newRoot.parent
+					nCols -= 1
+			else:
+				newRoot = newRoot.parent
+				nCols -= 1
+			
 ## print a Solution
 sols = nodesOfRelDepth(root, 2^m - 1)
 print(len(sols))
@@ -245,4 +258,6 @@ if len(sols) > 0:
 	print("A solution is \n%s."%(mat.str()))
 	with open("TreeAPN%.2f"%time(), "w") as f:
 		f.write(mat.str())
+with open("Tree","w") as f:
+	pickle.dump(root, f)
 	
