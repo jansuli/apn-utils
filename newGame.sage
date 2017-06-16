@@ -263,6 +263,7 @@ while nCols < 2^m - 1:
 		else:
 			root.children.remove(firstStage[-1])
 			newRoot = chooseNewRoot(root, maxDepth)
+			firstStage.append(newRoot)
 			if newRoot:
 				suckingTolerance = 0
 				nCols = 0
