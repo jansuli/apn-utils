@@ -244,7 +244,7 @@ while nCols < 2^m - 1:
 			break
 	else:
 		suckingTolerance += 1
-		if suckingTolerance < 10
+		if suckingTolerance < 10:
 			while newRoot.parent != None:
 				if newRoot.parent.children != None:
 					newRoot.parent.children.remove(newRoot)
