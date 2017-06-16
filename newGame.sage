@@ -209,6 +209,7 @@ root = Tree(K(0))
 nCols = 0
 maxDepth = 3
 newRoot = root
+suckingTolerance = 0
 
 if mp.cpu_count() > 8:
 	nWorkers = 8
@@ -232,6 +233,8 @@ while nCols < 2^m - 1:
 		newRoot = chooseNewRoot(newRoot, maxDepth)
 		
 		if newRoot:
+			if newRoot in root.children:
+				firstStage = newRoot
 			if nCols == 0:
 				nCols = maxDepth
 			else:
@@ -240,20 +243,31 @@ while nCols < 2^m - 1:
 			print("No options left on first stage.")
 			break
 	else:
-		while newRoot.parent != None:
-			if newRoot.parent.children != None:
-				newRoot.parent.children.remove(newRoot)
-				newestRoot = chooseNewRoot(newRoot.parent, maxDepth)
-				if newestRoot:
-					newRoot.parent.children.append(newRoot)
-					newRoot = newestRoot
-					break
+		suckingTolerance += 1
+		if suckingTolerance < 10
+			while newRoot.parent != None:
+				if newRoot.parent.children != None:
+					newRoot.parent.children.remove(newRoot)
+					newestRoot = chooseNewRoot(newRoot.parent, maxDepth)
+					if newestRoot:
+						newRoot.parent.children.append(newRoot)
+						newRoot = newestRoot
+						break
+					else:
+						newRoot = newRoot.parent
+						nCols -= 1
 				else:
 					newRoot = newRoot.parent
 					nCols -= 1
+		else:
+			root.children.remove(firstStage)
+			newRoot = choose(root, maxDepth)
+			if  newRoot:
+				suckingTolerance = 0
+				root.children.append(firstStage)
+				nCols = 0
 			else:
-				newRoot = newRoot.parent
-				nCols -= 1
+				break
 			
 ## print a Solution
 sols = nodesOfRelDepth(root, 2^m - 1)
