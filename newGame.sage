@@ -245,7 +245,7 @@ while nCols < 2^m - 1:
 			break
 	else:
 		suckingTolerance += 1
-		if suckingTolerance < 10:
+		if suckingTolerance < 1:
 			while newRoot.parent != None:
 				if newRoot.parent.children != None:
 					newRoot.parent.children.remove(newRoot)
@@ -262,8 +262,8 @@ while nCols < 2^m - 1:
 					nCols -= 1
 		else:
 			root.children.remove(firstStage[-1])
-			newRoot = choose(root, maxDepth)
-			if  newRoot:
+			newRoot = chooseNewRoot(root, maxDepth)
+			if newRoot:
 				suckingTolerance = 0
 				nCols = 0
 			else:
