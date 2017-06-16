@@ -212,6 +212,7 @@ newRoot = root
 suckingTolerance = 0
 firstStage = []
 leavesMax = 3*m
+maxSucking = 10
 
 
 if mp.cpu_count() > 8:
@@ -247,7 +248,7 @@ while nCols < 2^m - 1:
 			break
 	else:
 		suckingTolerance += 1
-		if suckingTolerance < 5:
+		if suckingTolerance < maxSucking:
 			while newRoot.parent != None:
 				if newRoot.parent.children != None:
 					newRoot.parent.children.remove(newRoot)
