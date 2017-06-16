@@ -1,4 +1,6 @@
 from tqdm import tqdm
+import multiprocessing as mp
+from time import time
 
 m = 6
 F = GF(2)
@@ -8,17 +10,145 @@ V = VectorSpace(F, 2*m) 		# linear independence checking
 class Tree():
 	def __init__(self, elem, parent=None, children=None):
 		self.elem = elem
+		self.parent = parent
+		self.children = children
 		
-		if children != None:
-			self.children = children
-		else:
-			self.children = []
+	def depth(self):
+		depth = 0
+		children = self.children
+		while children != None:
 			
-		if not parent:
-			self.parent = None
+			depth += 1
+			candidates = []
+			for child in children:
+				if child.children != None:
+					candidates += child.children
+			if len(candidates) > 0:
+				children = list(candidates)
+			else:
+				children = None
+		return depth
+		
+def leafWorker(leaf):
+	used = [leaf.elem]
+	parent = leaf.parent
+	while parent != None:
+		if parent.elem != K(0): used.append(parent.elem)
+		parent = parent.parent
+				
+	# Generate Matrix up til now
+	nCols = len(used)
+	used.reverse()
+	lower = matrix(GF(2), [vector(opt) for opt in used] ).transpose()
+	upper = matrix(GF(2), [vector(w^i) for i in range(nCols)]).transpose()
+	mat = upper.stack(lower)
+						
+	# Check possible options 
+	options	= [elem for elem in K if elem not in used and elem != K(0)]
+	print("Now investigating %d options to append to \n%s."%(len(options),mat.str()))
+	children = []
+	for option in options:
+		if checkOption(mat, option):
+			children.append(Tree(option, leaf))
+	return children
+			
+def updateTreeMulti(tree, maxDepth = 3, nWorkers = mp.cpu_count()):
+	depth = tree.depth()
+	print("Tree depth is %d"%depth)
+	while depth < maxDepth:
+		if depth != 0:
+			leaves = nodesOfRelDepth(tree, depth)
+			
+			if __name__ == "__main__":
+				p = mp.Pool(processes= nWorkers)
+				res = p.map(leafWorker, leaves)
+				for i in range(len(leaves)):
+					if len(res[i]) > 0:
+						leaves[i].children = res[i]
+				
+			newDepth = tree.depth()
+			if newDepth != depth:
+				depth = newDepth
+			else:
+				print("dead end")
+				return False	
+			
 		else:
-			self.parent = parent
+			# Intialization
+			options = list(K.list())
+			options.remove(K(0))
+			tree.children = []
+			for option in options:
+				optionTree = Tree(option, tree)
+				tree.children.append(optionTree)
+			depth = tree.depth()
+	return True
+		
+def updateTree(tree, maxDepth = 3):
+	depth = tree.depth()
+	print("Tree depth is %d"%depth)
+	while depth < maxDepth:
+		if depth != 0:
+			leaves = nodesOfRelDepth(tree, depth)
+			print("in first if")
+			for leaf in leaves:
+				used = [leaf.elem]
+				parent = leaf.parent
+				while parent != None:
+					if parent.elem != K(0): used.append(parent.elem)
+					parent = parent.parent
+				
+				# Generate Matrix up til now
+				nCols = len(used)
+				used.reverse()
+				lower = matrix(GF(2), [vector(opt) for opt in used] ).transpose()
+				upper = matrix(GF(2), [vector(w^i) for i in range(nCols)]).transpose()
+				mat = upper.stack(lower)
+								
+				# Check possible options 
+				options	= [elem for elem in K if elem not in used and elem != K(0)]
+				print("Now investigating %d options to append to \n%s."%(len(options),mat.str()))
 
+				children = []
+				for option in options:
+					if checkOption(mat, option):
+						children.append(Tree(option, leaf))
+				if len(children) > 0:
+					leaf.children = children
+			newDepth = tree.depth()
+			if newDepth != depth:
+				depth = newDepth
+			else:
+				print("dead end")
+				return False
+							
+			
+		else:
+			# Intialization
+			options = list(K.list())
+			options.remove(K(0))
+			tree.children = []
+			for option in options:
+				optionTree = Tree(option, tree)
+				tree.children.append(optionTree)
+			depth = tree.depth()
+	return True
+
+def nodesOfRelDepth(root, depth, currentDepth = 0):
+	results = []
+	if depth != 0:
+		children = root.children 
+		if children != None:
+			if currentDepth + 1 == depth:
+				results += children
+			else:
+				for child in children:
+					results += nodesOfRelDepth(child, depth, currentDepth + 1)
+		return results
+	else:
+		return [root]	
+	
+	
 # Generate index lookup for checking linear independence of columns
 # indices[nCols] = Combinations(nCols,4)
 print("Generating indices for later...")
@@ -35,8 +165,10 @@ def checkOption(mat, opt):
 	newCol = matrix(F, newColUpper+newColLower).transpose()
 	
 	newMat = mat.augment(newCol)
-	
-	return checkRanks(newMat)
+	res = checkRanks(newMat)
+	#if res:
+		#print("\n%s\n works"%newMat.str())
+	return res
 	
 def checkRanks(mat):
 	N = mat.ncols()
@@ -53,74 +185,65 @@ def checkRanks(mat):
 			if V.are_linearly_dependent(cols):	# faster than rank checking it seems
 				return False
 		else:
-			return True
+			return True	
 			
-def chooseNext(trees):
-	lengths = [len(tree.children) for tree in trees]
-	most = max(lengths)
-	
-	if len(trees) != lengths.count(most):
-		return trees[ lengths.index(most) ]
-	else:
-		return trees[randint(0,len(trees)-1)] 
-			
-# Initialization
-trees = list()
-for i in tqdm(range(0,2^m-1), desc="Initiator"):
-	elem = w^i
-	
-	possibleOptions = copy(K.list())
-	if K(0) in possibleOptions:
-		possibleOptions.remove(K(0))
-	
-	for option in tqdm(possibleOptions):
-		elemTree = Tree(option)
-		children = []
-		optionsLeft = copy(possibleOptions)
-		optionsLeft.remove(elemTree.elem)
-		
-		initialUpper = vector(elem).list()
-		initialLower = vector(option).list()
-		initialMatrix = matrix(F, initialUpper+initialLower).transpose()
-		
-		for opt in optionsLeft:
-			if checkOption(initialMatrix, opt):
-				optTree = Tree(opt,parent=elemTree)
-				children.append(optTree)
-	
-		elemTree.children = children
-		trees.append(elemTree)
 
-N = 0
-while N < 2^m-1:
-	tree = chooseNext(trees)
-	trees = []
 	
-	# construct matrix until now
-	N = 1
-	lower = [vector(tree.elem)]
-	parent = tree.parent
+root = Tree(K(0))
+nCols = 0
+maxDepth = 3
+newRoot = root
+
+def chooseNewRoot(parent, maxDepth):
+	if parent.children != []:
+		nMaxBranches = []
+		for child in parent.children:
+			nMaxBranches.append(len(nodesOfRelDepth(child, maxDepth - 1)))
+		newRoot = parent.children[ nMaxBranches.index(max(nMaxBranches)) ]
+		
+		return newRoot
+	else:
+		return False
+	
+while nCols < 2^m - 1:
+	if updateTreeMulti(newRoot, maxDepth):
+		## Select new root among children
+		newRoot = chooseNewRoot(newRoot, maxDepth)
+		
+		if newRoot:
+			if newRoot in root.children:
+				firstStage = newRoot
+			if nCols == 0:
+				nCols = maxDepth
+			else:
+				nCols += 1
+		else:
+			print("No options left on first stage.")
+			break
+	else:
+		root.children.remove(firstStage)
+		newRoot = root
+		nCols = 0
+## print a Solution
+sols = nodesOfRelDepth(root, 2^m - 1)
+print(len(sols))
+if len(sols) > 0:
+	sol = sols[0]
+
+	used = [sol.elem]
+	parent = sol.parent
 	while parent != None:
-		N += 1
-		lower.append(vector(parent.elem))
+		if parent.elem != K(0): used.append(parent.elem)
 		parent = parent.parent
-	lower.reverse()
-	upper = [vector(w^i) for i in range(N)]
+					
+	## Generate Matrix up til now
+	nCols = len(used)
+	used.reverse()
+	lower = matrix(GF(2), [vector(opt) for opt in used] ).transpose()
+	upper = matrix(GF(2), [vector(w^i) for i in range(nCols)]).transpose()
+	mat = upper.stack(lower)
+									
+	print("A solution is \n%s."%(mat.str()))
+	with open("TreeAPN%.2f"%time(), "w") as f:
+		f.write(mat.str())
 	
-	upperMat = matrix(F, upper).transpose()
-	lowerMat = matrix(F, lower).transpose()
-	initialMatrix = upperMat.stack(lowerMat)
-	
-	print(initialMatrix.str())
-	
-	for optionTree in tqdm(tree.children, desc="Options"):
-		option = optionTree.elem
-		newCol = matrix(F, vector(w^N).list() + vector(option).list()).transpose()
-		testMatrix = initialMatrix.augment(newCol)
-		optionsLeft = [elem for elem in K if elem != 0 and elem not in lower + [option]]
-		for opt in optionsLeft:
-			if checkOption(testMatrix,opt):
-				newTree=Tree(opt,parent=optionTree)
-				optionTree.children.append(newTree)
-		trees.append(optionTree)
-			
