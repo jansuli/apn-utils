@@ -207,10 +207,12 @@ def checkRanks(mat):
 	
 root = Tree(K(0))
 nCols = 0
-maxDepth = 3
+maxDepth = m-1
 newRoot = root
 suckingTolerance = 0
 firstStage = []
+leavesMax = 3*m
+
 
 if mp.cpu_count() > 8:
 	nWorkers = 8
@@ -229,7 +231,7 @@ def chooseNewRoot(parent, maxDepth):
 		return False
 	
 while nCols < 2^m - 1:
-	if updateTreeMulti(newRoot, maxDepth, nWorkers):
+	if updateTreeMulti(newRoot, maxDepth, nWorkers, leavesMax):
 		## Select new root among children
 		newRoot = chooseNewRoot(newRoot, maxDepth)
 		
