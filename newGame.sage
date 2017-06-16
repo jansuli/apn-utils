@@ -53,6 +53,8 @@ def leafWorker(leaf, nWorkers):
 	checkFunc = partial(checkOption, mat)
 	p = mp.Pool(processes=nWorkers)
 	validOptions = p.map(checkFunc, options)
+	p.close()
+	p.join()
 	for option in validOptions:
 		if option != None:
 			children.append(Tree(option, leaf))
