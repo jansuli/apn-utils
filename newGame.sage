@@ -201,6 +201,7 @@ def checkRanksMulti(mat, nWorkers):
 			return True
 	else:
 		inds = indices[N]
+		print("Splitting in %d..."%nWorkers)
 		chunks = array_split(inds, nWorkers)
 		chunks = [chunk.tolist() for chunk in chunks]
 		workers = []
