@@ -72,7 +72,7 @@ def updateTreeMulti(tree, maxDepth = 3, nWorkers = mp.cpu_count(), leavesMax = f
 			
 			if __name__ == "__main__":
 				#p = mp.Pool(processes= nWorkers)
-				if len(leaves) > leavesMax: leaves = random.choice(leaves, leavesMax).tolist()
+				if leaves != None and len(leaves) > leavesMax: leaves = random.choice(leaves, leavesMax).tolist()
 				for leaf in leaves:
 					leaf.children = leafWorker(leaf, nWorkers)
 				#res = p.map(leafWorker, leaves)
@@ -211,7 +211,7 @@ maxDepth = m-1
 newRoot = root
 suckingTolerance = 0
 firstStage = []
-leavesMax = 3*m
+leavesMax = None #3*m
 maxSucking = 10
 
 
