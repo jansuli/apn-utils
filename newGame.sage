@@ -51,7 +51,7 @@ def leafWorker(leaf, nWorkers):
 	print("Now investigating %d options to append to \n%s."%(len(options),mat.str()))
 	children = []
 	checkFunc = partial(checkOption, mat)
-	p = mp.Pool()
+	p = mp.Pool(process=nWorkers)
 	validOptions = p.map(checkFunc, options)
 	for option in validOptions:
 		if option != None:
