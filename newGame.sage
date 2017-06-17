@@ -50,7 +50,6 @@ def leafWorker(leaf, nWorkers):
 	options	= [elem for elem in K if elem not in used and elem != K(0)]
 	print("Now investigating %d options to append to \n%s."%(len(options),mat.str()))
 	children = []
-	if nWorkers == None: nWorkers = len(options)
 	checkFunc = partial(checkOption, mat)
 	p = mp.Pool(processes=nWorkers)
 	validOptions = p.map(checkFunc, options)
@@ -218,8 +217,6 @@ maxSucking = 10
 
 if 12 > mp.cpu_count() > 8:
 	nWorkers = 8
-elif mp.cpu_count() => 12:
-	nWorkers = None
 else:
 	nWorkers = mp.cpu_count()
 
