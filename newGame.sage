@@ -239,7 +239,7 @@ def checkRanks(mat):
 	
 root = Tree(K(0))
 nCols = 0
-maxDepth = 3
+maxDepth = 4
 newRoot = root
 suckingTolerance = 10
 firstStage = []
