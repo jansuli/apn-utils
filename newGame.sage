@@ -266,7 +266,7 @@ def chooseNewRoot(parent, maxDepth):
 try:
 	
 	while nCols < 2^m - 1:
-		if updateTreeMulti(newRoot, maxDepth, nWorkers, leavesMax):
+		if updateTreeMulti(newRoot, maxDepth, nWorkers, 2^m-1-nCols):
 			## Select new root among children
 			newRoot = chooseNewRoot(newRoot, maxDepth)
 			
