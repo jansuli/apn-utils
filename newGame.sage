@@ -62,6 +62,33 @@ def leafWorker(leaf, nWorkers):
 		return children
 	else:
 		return None
+		
+def leafWorkerRestricted(leaf):
+	used = [leaf.elem]
+	parent = leaf.parent
+	while parent != None:
+		if parent.elem != K(0): used.append(parent.elem)
+		parent = parent.parent
+				
+	# Generate Matrix up til now
+	nCols = len(used)
+	used.reverse()
+	#print used
+	lower = matrix(GF(2), [vector(opt) for opt in used] ).transpose()
+	upper = matrix(GF(2), [vector(w^i) for i in range(nCols)]).transpose()
+	mat = upper.stack(lower)
+						
+	# Check possible options 
+	options	= [elem for elem in K if elem not in used and elem != K(0)]
+	print("Now investigating (single-threaded) %d options to append to \n%s."%(len(options),mat.str()))
+	children = []
+	for option in options:
+		if checkOption(mat, option):
+			children.append(Tree(option,leaf))
+	if len(children)> 0:
+		return children
+	else:
+		return None
 			
 def updateTreeMulti(tree, maxDepth = 3, nWorkers = mp.cpu_count(), leavesMax = floor(mp.cpu_count()/2)):
 	depth = tree.depth()
@@ -71,14 +98,19 @@ def updateTreeMulti(tree, maxDepth = 3, nWorkers = mp.cpu_count(), leavesMax = f
 			leaves = nodesOfRelDepth(tree, depth)
 			
 			if __name__ == "__main__":
-				#p = mp.Pool(processes= nWorkers)
-				if leavesMax != None and len(leaves) > leavesMax: leaves = random.choice(leaves, leavesMax).tolist()
-				for leaf in leaves:
-					leaf.children = leafWorker(leaf, nWorkers)
-				#res = p.map(leafWorker, leaves)
-				#for i in range(len(leaves)):
-					#if len(res[i]) > 0:
-						#leaves[i].children = res[i]
+				
+				if leavesMax != None and len(leaves) > leavesMax: leaves = random.choice(leaves, leavesMax).tolist()	
+				if root.depth() <= 15:
+					p = mp.Pool(processes= nWorkers)
+					res = p.map(leafWorkerRestricted, leaves)
+					for i in range(len(leaves)):
+						leaves[i].children = res[i]
+					p.close()
+					p.join()
+				
+				else:	
+					for leaf in leaves:
+						leaf.children = leafWorker(leaf, nWorkers)
 				
 			newDepth = tree.depth()
 			if newDepth != depth:
@@ -207,7 +239,7 @@ def checkRanks(mat):
 	
 root = Tree(K(0))
 nCols = 0
-maxDepth = m - 1
+maxDepth = 3
 newRoot = root
 suckingTolerance = 10
 firstStage = []
@@ -230,74 +262,83 @@ def chooseNewRoot(parent, maxDepth):
 		return newRoot
 	else:
 		return False
-	
-while nCols < 2^m - 1:
-	if updateTreeMulti(newRoot, maxDepth, nWorkers, leavesMax):
-		## Select new root among children
-		newRoot = chooseNewRoot(newRoot, maxDepth)
 		
-		if newRoot:
-			if newRoot in root.children:
-				firstStage.append(newRoot)
-			if nCols == 0:
-				nCols = maxDepth
+try:
+	
+	while nCols < 2^m - 1:
+		if updateTreeMulti(newRoot, maxDepth, nWorkers, leavesMax):
+			## Select new root among children
+			newRoot = chooseNewRoot(newRoot, maxDepth)
+			
+			if newRoot:
+				if newRoot in root.children:
+					firstStage.append(newRoot)
+				if nCols == 0:
+					nCols = maxDepth
+				else:
+					nCols += 1
 			else:
-				nCols += 1
+				print("No options left on first stage.")
+				break
 		else:
-			print("No options left on first stage.")
-			break
-	else:
-		suckingTolerance += 1
-		if suckingTolerance < maxSucking:
-			while newRoot.parent != None:
-				if newRoot.parent.children != None:
-					newRoot.parent.children.remove(newRoot)
-					newestRoot = chooseNewRoot(newRoot.parent, maxDepth)
-					if newestRoot:
-						newRoot.parent.children.append(newRoot)
-						newRoot = newestRoot
-						break
+			suckingTolerance += 1
+			if suckingTolerance < maxSucking:
+				while newRoot.parent != None:
+					if newRoot.parent.children != None:
+						newRoot.parent.children.remove(newRoot)
+						newestRoot = chooseNewRoot(newRoot.parent, maxDepth)
+						if newestRoot:
+							newRoot.parent.children.append(newRoot)
+							newRoot = newestRoot
+							break
+						else:
+							newRoot = newRoot.parent
+							nCols -= 1
 					else:
 						newRoot = newRoot.parent
 						nCols -= 1
-				else:
-					newRoot = newRoot.parent
-					nCols -= 1
-		else:
-			root.children.remove(firstStage[-1])
-			newRoot = chooseNewRoot(root, maxDepth)
-			firstStage.append(newRoot)
-			if newRoot:
-				suckingTolerance = 0
-				nCols = 0
 			else:
-				break
-for opt in firstStage:
-	root.children.append(opt)
-			
-## print a Solution
-sols = nodesOfRelDepth(root, 2^m - 1)
-print(len(sols))
-if len(sols) > 0:
-	sol = sols[0]
+				root.children.remove(firstStage[-1])
+				newRoot = chooseNewRoot(root, maxDepth)
+				firstStage.append(newRoot)
+				if newRoot:
+					suckingTolerance = 0
+					nCols = 0
+				else:
+					break
+	for opt in firstStage:
+		root.children.append(opt)
+				
+	## print a Solution
+	sols = nodesOfRelDepth(root, 2^m - 1)
+	print(len(sols))
+	if len(sols) > 0:
+		sol = sols[0]
 
-	used = [sol.elem]
-	parent = sol.parent
-	while parent != None:
-		if parent.elem != K(0): used.append(parent.elem)
-		parent = parent.parent
-					
-	## Generate Matrix up til now
-	nCols = len(used)
-	used.reverse()
-	print used
-	lower = matrix(GF(2), [vector(opt) for opt in used] ).transpose()
-	upper = matrix(GF(2), [vector(w^i) for i in range(nCols)]).transpose()
-	mat = upper.stack(lower)
-									
-	print("A solution is \n%s."%(mat.str()))
-	with open("TreeAPN%.2f"%time(), "w") as f:
-		f.write(mat.str())
-with open("Tree","w") as f:
-	pickle.dump(root, f)
-	
+		used = [sol.elem]
+		parent = sol.parent
+		while parent != None:
+			if parent.elem != K(0): used.append(parent.elem)
+			parent = parent.parent
+						
+		## Generate Matrix up til now
+		nCols = len(used)
+		used.reverse()
+		print used
+		lower = matrix(GF(2), [vector(opt) for opt in used] ).transpose()
+		upper = matrix(GF(2), [vector(w^i) for i in range(nCols)]).transpose()
+		mat = upper.stack(lower)
+										
+		print("A solution is \n%s."%(mat.str()))
+		with open("TreeAPN%.2f"%time(), "w") as f:
+			f.write(mat.str())
+	with open("Tree","w") as f:
+		pickle.dump(root, f)
+
+except KeyboardInterrupt:
+	print("saving")
+	for opt in firstStage:
+		root.children.append(opt)
+	with open("Tree","w") as f:
+		pickle.dump(root, f)
+		
