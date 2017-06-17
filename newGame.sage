@@ -269,7 +269,7 @@ try:
 		if nCols <= maxDepth:
 			leavesMax = None
 		else:
-			leavesMax = 2^m-1-nCols
+			leavesMax = 20
 		if updateTreeMulti(newRoot, maxDepth, nWorkers, leavesMax):
 			## Select new root among children
 			newRoot = chooseNewRoot(newRoot, maxDepth)
