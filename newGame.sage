@@ -266,7 +266,7 @@ def chooseNewRoot(parent, maxDepth):
 try:
 	
 	while nCols < 2^m - 1:
-		if nCols <= MaxDepth:
+		if nCols <= maxDepth:
 			leavesMax = None
 		else:
 			leavesMax = 2^m-1-nCols
