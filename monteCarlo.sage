@@ -37,7 +37,7 @@ class Board():
 		self.legalDict = dict()
 		self.combIndices = dict()
 		for i in range(4,2^m):
-			self.combIndices[i] = Combinations(i, 4).list()
+			self.combIndices[i] = [ind for ind in Combinations(i, 4).list() if i in ind]
 		
 	def start(self):
 		# Return starting state, i.e. empty tuple
