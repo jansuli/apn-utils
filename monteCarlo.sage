@@ -207,7 +207,7 @@ class MonteCarlo(object):
 		for t in range(1,maxMoves+1):
 			if not state in visitedStates:			
 			legal = self.board.legal_plays(statesCopy)
-			if not set([self.board.next_state(p) for p in legal]).issubset(visitedStates):
+			if not set([self.board.next_state(state, p) for p in legal]).issubset(visitedStates):
 				if legal and len(legal)>0:
 					moves_states = [ (p, self.board.next_state(state, p)) for p in legal ]
 					
@@ -251,7 +251,7 @@ class MonteCarlo(object):
 				self.wins[state] += 1
 m = 5
 game = Board(m, nWorkers = 8)
-monte = MonteCarlo(game, maxCols = 2^m -1, time = 300)
+monte = MonteCarlo(game, maxCols = 2^m -1, time = 30)
 monte.update(game.start())
 
 won = False
