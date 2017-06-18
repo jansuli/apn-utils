@@ -204,8 +204,7 @@ class MonteCarlo(object):
 		maxMoves = self.maxCols - len(state)
 		
 		expand = True
-		for t in range(1,maxMoves+1):
-			if not state in visitedStates:			
+		for t in range(1,maxMoves+1):	
 			legal = self.board.legal_plays(statesCopy)
 			if not set([self.board.next_state(state, p) for p in legal]).issubset(visitedStates):
 				if legal and len(legal)>0:
