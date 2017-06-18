@@ -134,7 +134,7 @@ class MonteCarlo(object):
 		
 		if not legal:
 			return False
-		elif len(legal) == 1:
+		if len(legal) == 1:
 			return legal[0]
 			
 		games = 0
@@ -170,39 +170,45 @@ class MonteCarlo(object):
 		expand = True
 		for t in range(1,maxMoves+1):			
 			legal = self.board.legal_plays(statesCopy)
-			moves_states = [ (p, self.board.next_state(state, p)) for p in legal ]
-			
-			if all(plays.get(S) for p,S in moves_states):
-				# if we have stats on all legal moves, use them
-				log_total = numerical_approx(log(sum(plays[S] for p,S in moves_states)))
-				value, move, state = max(
-					(numerical_approx((wins[S] / plays[S]) + self.C * sqrt(log_total / plays[S])), p,S)
-					for p,S in moves_states
-				)
-			else:
-				move, state = choice(moves_states)
-			#print move, state
+			if legal:
+				moves_states = [ (p, self.board.next_state(state, p)) for p in legal ]
 				
-			statesCopy.append(state)
-			
-			if expand and state not in self.plays:
-				expand = False
-				self.plays[state] = 0
-				self.wins[state] = 0
-				if t > self.max_depth:
-					self.max_depth = t
-			
-			visitedStates.add(state)
-			
-			win = self.board.win(statesCopy)
-			
-			if win:
+				if all(plays.get(S) for p,S in moves_states):
+					# if we have stats on all legal moves, use them
+					log_total = numerical_approx(log(sum(plays[S] for p,S in moves_states)))
+					value, move, state = max(
+						(numerical_approx((wins[S] / plays[S]) + self.C * sqrt(log_total / plays[S])), p,S)
+						for p,S in moves_states
+					)
+				else:
+					move, state = choice(moves_states)
+				#print move, state
+					
+				statesCopy.append(state)
+				
+				if expand and state not in self.plays:
+					expand = False
+					self.plays[state] = 0
+					self.wins[state] = 0
+					if t > self.max_depth:
+						self.max_depth = t
+				
+				visitedStates.add(state)
+				
+				win = self.board.win(statesCopy)
+				
+				if win:
+					break
+			else:
 				break
+			
 				
 		for state in visitedStates:
 			if state not in self.plays:
 				continue
 			self.plays[state] += 1
+			if win:
+				self.wins[state] += 1
 m = 5			
 game = Board(m)
 monte = MonteCarlo(game, maxCols = 2^m -1, time = 10)
