@@ -137,7 +137,8 @@ class Board():
 		m = self.field.degree()
 		current = state_history[-1]
 		if len(current) == 2^m - 1:
-			print ("Won!!!!!!!!!!!!!%d"%2^m -1)
+			print ("Won!!!!!!!!!!!!!%d"%(2^m -1))
+			print current
 			#with open("monte_perm%.1f.tuple"%time(), "w") as f:
 				#f.write(str(current))
 			return 1
@@ -244,7 +245,7 @@ class MonteCarlo(object):
 			self.plays[state] += 1
 			if win:
 				self.wins[state] += 1
-m = 5			
+m = 3	
 game = Board(m, nWorkers = 4)
 monte = MonteCarlo(game, maxCols = 2^m -1, time = 300)
 monte.update(game.start())
