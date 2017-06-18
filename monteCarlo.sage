@@ -246,7 +246,7 @@ class MonteCarlo(object):
 			if win:
 				self.wins[state] += 1
 m = 5
-game = Board(m, nWorkers = 4)
+game = Board(m, nWorkers = 8)
 monte = MonteCarlo(game, maxCols = 2^m -1, time = 300)
 monte.update(game.start())
 
