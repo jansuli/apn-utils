@@ -35,6 +35,7 @@ class Board():
 		
 		K = self.field
 		if current in self.legalDict:
+			print("We know that state...")
 			legal = self.legalDict[current]
 			return legal
 			
@@ -154,6 +155,7 @@ class MonteCarlo(object):
 		)
 		
 		print "Maximum depth searched: %d."%self.max_depth
+		print self.plays, self.wins
 		
 		return move
 		
@@ -209,9 +211,9 @@ class MonteCarlo(object):
 			self.plays[state] += 1
 			if win:
 				self.wins[state] += 1
-m = 5			
+m = 4			
 game = Board(m)
-monte = MonteCarlo(game, maxCols = 2^m -1, time = 10)
+monte = MonteCarlo(game, maxCols = 2^m -1, time = 300)
 monte.update(game.start())
 
 won = False
@@ -229,6 +231,7 @@ while not won:
 		won = True
 	else:
 		# Lost, reset
+		print("We lost :(")
 		monte.update(game.start())
 		game.state = ()
 print(game.state)
