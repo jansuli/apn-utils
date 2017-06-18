@@ -213,7 +213,7 @@ class MonteCarlo(object):
 				self.wins[state] += 1
 m = 4			
 game = Board(m)
-monte = MonteCarlo(game, maxCols = 2^m -1, time = 300)
+monte = MonteCarlo(game, maxCols = 2^m -1, time = 1)
 monte.update(game.start())
 
 won = False
