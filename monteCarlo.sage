@@ -189,7 +189,7 @@ class MonteCarlo(object):
 		)
 		
 		print "Maximum depth searched: %d."%self.max_depth
-		print self.plays, self.wins
+		#print self.plays, self.wins
 		
 		return move
 		
