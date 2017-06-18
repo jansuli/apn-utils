@@ -1,11 +1,35 @@
 from time import time
 import datetime
+from functools import partial
+import multiprocessing as mp
+
+def checkMove(mat, nCols,V, w, inds,move):
+	newColUp = matrix(GF(2),vector(w^nCols)).transpose()
+	newColLo = matrix(GF(2),vector(move)).transpose()
+	newCol = newColUp.stack(newColLo)
+	matNew = mat.augment(newCol)
+		
+	N = nCols + 1
+	if N <= 3:
+		cols = matNew.columns()
+		if not V.are_linearly_dependent(cols):
+			return move
+	else:
+		#print matNew.str()
+		for ind in inds:
+			cols = matNew[:, ind].columns()
+			if V.are_linearly_dependent(cols):	# faster than rank checking it seems
+				return
+		else:
+			return move
+
 
 class Board():
-	def __init__(self, m = 3):
+	def __init__(self, m = 3, nWorkers = 2):
 		self.state = ()
 		K.<w> = GF(2^m, 'w')
 		V = VectorSpace(GF(2), 2*m)
+		self.nWorkers = nWorkers
 		
 		self.field = K
 		self.vecSpace = V
@@ -72,26 +96,35 @@ class Board():
 		
 		print("Checking to %d options to append to \n%s\n"%(len(options),mat.str()))
 		
-		for move in options:
-			newColUp = matrix(GF(2),vector(w^nCols)).transpose()
-			newColLo = matrix(GF(2),vector(move)).transpose()
-			newCol = newColUp.stack(newColLo)
-			matNew = mat.augment(newCol)
+		#for move in options:
+			#newColUp = matrix(GF(2),vector(w^nCols)).transpose()
+			#newColLo = matrix(GF(2),vector(move)).transpose()
+			#newCol = newColUp.stack(newColLo)
+			#matNew = mat.augment(newCol)
 			
-			N = nCols + 1
-			if N <= 3:
-				cols = matNew.columns()
-				if not V.are_linearly_dependent(cols):
-					legal.append(move)
-			else:
-				inds = self.combIndices[N]
-				#print matNew.str()
-				for ind in inds:
-					cols = matNew[:, ind].columns()
-					if V.are_linearly_dependent(cols):	# faster than rank checking it seems
-						break
-				else:
-					legal.append(move)
+			#N = nCols + 1
+			#if N <= 3:
+				#cols = matNew.columns()
+				#if not V.are_linearly_dependent(cols):
+					#legal.append(move)
+			#else:
+				#inds = self.combIndices[N]
+				##print matNew.str()
+				#for ind in inds:
+					#cols = matNew[:, ind].columns()
+					#if V.are_linearly_dependent(cols):	# faster than rank checking it seems
+						#break
+				#else:
+					#legal.append(move)
+		if __name__ == "__main__": 
+			inds = None if nCols < 3 else self.combIndices[nCols + 1]
+			moveChecker = partial(checkMove, mat, nCols, V, w, inds)
+			p = mp.Pool(processes = self.nWorkers)
+			res = p.map(moveChecker, options)
+			legal = [opt for opt in res if res != None]
+			p.close()
+			p.join()
+			
 		self.legalDict[current] = legal
 		
 		if len(legal) > 0:
@@ -104,7 +137,7 @@ class Board():
 		m = self.field.degree()
 		current = state_history[-1]
 		if len(current) == 2^m - 1:
-			#print ("Won!!!!!!!!!!!!!")
+			print ("Won!!!!!!!!!!!!!")
 			#with open("monte_perm%.1f.tuple"%time(), "w") as f:
 				#f.write(str(current))
 			return 1
@@ -172,7 +205,7 @@ class MonteCarlo(object):
 		expand = True
 		for t in range(1,maxMoves+1):			
 			legal = self.board.legal_plays(statesCopy)
-			if legal:
+			if legal and len(legal)>0:
 				moves_states = [ (p, self.board.next_state(state, p)) for p in legal ]
 				
 				if all(plays.get(S) for p,S in moves_states):
@@ -212,8 +245,8 @@ class MonteCarlo(object):
 			if win:
 				self.wins[state] += 1
 m = 5			
-game = Board(m)
-monte = MonteCarlo(game, maxCols = 2^m -1, time = 100)
+game = Board(m, nWorkers = 4)
+monte = MonteCarlo(game, maxCols = 2^m -1, time = 300)
 monte.update(game.start())
 
 won = False
