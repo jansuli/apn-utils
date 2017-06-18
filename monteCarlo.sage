@@ -137,7 +137,7 @@ class Board():
 		m = self.field.degree()
 		current = state_history[-1]
 		if len(current) == 2^m - 1:
-			print ("Won!!!!!!!!!!!!!")
+			print ("Won!!!!!!!!!!!!!%d"%2^m -1)
 			#with open("monte_perm%.1f.tuple"%time(), "w") as f:
 				#f.write(str(current))
 			return 1
