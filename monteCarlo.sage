@@ -121,7 +121,7 @@ class Board():
 			moveChecker = partial(checkMove, mat, nCols, V, w, inds)
 			p = mp.Pool(processes = self.nWorkers)
 			res = p.map(moveChecker, options)
-			legal = [opt for opt in res if res != None]
+			legal = [opt for opt in res if opt != None]
 			p.close()
 			p.join()
 			
