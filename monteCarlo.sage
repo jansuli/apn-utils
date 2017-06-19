@@ -264,7 +264,6 @@ class MonteCarlo(object):
 			legal = self.board.legal_plays(statesCopy)
 			if legal and len(legal) > 0:
 				moves_states = [ (p, self.board.next_state(state, p)) for p in legal ]
-				
 				if not set([S for p,S in moves_states ]).issubset(visitedStates):
 									
 					if all(plays.get(S) for p,S in moves_states):
