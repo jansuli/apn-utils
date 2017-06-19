@@ -171,7 +171,7 @@ class Board():
 				p.join()
 		else:
 			print("Using multicore rank check")
-			indexChunks = array_split(inds, nWorkers)
+			indexChunks = array_split(inds, self.nWorkers)
 			indexChunks = [arr.tolist() for arr in indexChunks]
 			
 			for move in options:
