@@ -261,8 +261,7 @@ class MonteCarlo(object):
 		expand = True
 		for t in range(1,maxMoves+1):	
 			legal = self.board.legal_plays(statesCopy)
-			needed = self.maxCols - len(state)
-			if legal and len(legal) >= needed:
+			if legal and len(legal) > 0:
 				moves_states = [ (p, self.board.next_state(state, p)) for p in legal ]
 				
 				if all(plays.get(S) for p,S in moves_states):
@@ -292,7 +291,7 @@ class MonteCarlo(object):
 				if win == 1:
 					break
 			else:
-				print("not enough choices left: we have %d options to fill %d columns"%(len(legal), needed))
+				#print("not enough choices left: we have %d options to fill %d columns"%(len(legal), needed))
 				break
 				
 		for state in visitedStates:
