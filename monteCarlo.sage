@@ -198,7 +198,7 @@ class Board():
 				f.write(str(current))
 			return 1
 		else:
-			return len(current)/maxCols
+			return numerical_approx(e^(len(current)/maxCols) - 1)
 		
 class MonteCarlo(object):
 	
@@ -229,7 +229,7 @@ class MonteCarlo(object):
 			
 		games = 0
 		begin = datetime.datetime.utcnow()
-		while datetime.datetime.utcnow()-begin < self.duration:
+		while datetime.datetime.utcnow()-begin < self.duration and games <= 100:
 			if self.run_simulation() != False:
 				games += 1
 			else:
@@ -307,7 +307,7 @@ class MonteCarlo(object):
 				self.wins[state] += win
 m = 5
 game = Board(m, nWorkers = mp.cpu_count())
-monte = MonteCarlo(game, maxCols = 2^m -1, time = 30)
+monte = MonteCarlo(game, maxCols = 2^m -1, time = 300)
 monte.update(game.start())
 
 won = False
