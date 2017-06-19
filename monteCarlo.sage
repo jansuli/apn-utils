@@ -135,15 +135,16 @@ class Board():
 	def win(self, state_history):
 		# Takes entire game history and returns 1 if game is won or 0 if game is ongoing.
 		m = self.field.degree()
+		maxCols = 2^m - 1
 		current = state_history[-1]
-		if len(current) == 2^m - 1:
+		if len(current) == maxCols:
 			print ("Won!!!!!!!!!!!!!%d"%(2^m -1))
 			print current
 			with open("monte_perm%.1f.tuple"%time(), "w") as f:
 				f.write(str(current))
 			return 1
 		else:
-			return 0
+			return len(current)/maxCols
 		
 class MonteCarlo(object):
 	
