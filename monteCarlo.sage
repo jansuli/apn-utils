@@ -305,9 +305,9 @@ class MonteCarlo(object):
 			self.plays[state] += 1
 			if win:
 				self.wins[state] += win
-m = 5
+m = 6
 game = Board(m, nWorkers = mp.cpu_count())
-monte = MonteCarlo(game, maxCols = 2^m -1, time = 300)
+monte = MonteCarlo(game, maxCols = 2^m -1, time = 600)
 monte.update(game.start())
 
 won = False
