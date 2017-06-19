@@ -161,7 +161,7 @@ class Board():
 				#else:
 					#legal.append(move)
 		inds = None if nCols < 3 else self.combIndices[nCols + 1]
-		if len(options) >= self.nWorkers:
+		if len(options) >= floor(0.5*self.nWorkers):
 			if __name__ == "__main__": 
 				moveChecker = partial(checkMove, mat, nCols, V, w, inds)
 				p = mp.Pool(processes = self.nWorkers)
