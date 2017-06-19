@@ -263,9 +263,10 @@ class MonteCarlo(object):
 		for t in range(1,maxMoves+1):	
 			legal = self.board.legal_plays(statesCopy)
 			if legal and len(legal) > 0:
-				if not set([self.board.next_state(state,p) for p in legal]).issubset(visitedStates):
-					moves_states = [ (p, self.board.next_state(state, p)) for p in legal ]
-					
+				moves_states = [ (p, self.board.next_state(state, p)) for p in legal ]
+				
+				if not set([S for p,S in moves_states ]).issubset(visitedStates):
+									
 					if all(plays.get(S) for p,S in moves_states):
 						# if we have stats on all legal moves, use them
 						log_total = numerical_approx(log(sum(plays[S] for p,S in moves_states)))
@@ -306,7 +307,7 @@ class MonteCarlo(object):
 				self.wins[state] = win
 m = 5
 game = Board(m, nWorkers = mp.cpu_count())
-monte = MonteCarlo(game, maxCols = 2^m -1, time = 120)
+monte = MonteCarlo(game, maxCols = 2^m -1, time = 30)
 monte.update(game.start())
 
 won = False
