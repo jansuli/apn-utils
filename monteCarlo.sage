@@ -51,10 +51,11 @@ def multiCoreRankCheck(mat, nCols, V, w, inds, nWorkers, move):
 			resList = manager.list()
 			workers = []
 			
-			indexChunks = array_split(inds, nWorkers).tolist()
+			indexChunks = array_split(inds, nWorkers)
+			indexChunks = [arr.tolist() for arr in indexChunks]
 			
 			for i in range(nWorkers):
-				p = mp.Process(target= rankCheck, (mat,indexChunks[i],resList))
+				p = mp.Process(target= rankCheck, args=(mat,indexChunks[i],resList))
 				workers.append(p)
 				p.start()
 				
@@ -162,9 +163,9 @@ class Board():
 						#break
 				#else:
 					#legal.append(move)
-		if len(options) < nWorkers:
+		inds = None if nCols < 3 else self.combIndices[nCols + 1]
+		if len(options) >= self.nWorkers:
 			if __name__ == "__main__": 
-				inds = None if nCols < 3 else self.combIndices[nCols + 1]
 				moveChecker = partial(checkMove, mat, nCols, V, w, inds)
 				p = mp.Pool(processes = self.nWorkers)
 				res = p.map(moveChecker, options)
@@ -174,7 +175,7 @@ class Board():
 		else:
 			print("Using multicore rank check")
 			for move in options:
-				res = multiCoreRankCheck(mat,nCols,V,w, inds, nWorkers, move)
+				res = multiCoreRankCheck(mat,nCols,V,w, inds, self.nWorkers, move)
 				if res:
 					legal.append(res)
 			
