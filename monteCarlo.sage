@@ -138,7 +138,7 @@ class Board():
 		options = [elem for elem in K if elem not in currentList and elem != K(0)]
 		legal = []
 		
-		print("Checking to %d options."%len(options))# \n%s\n"%(len(options),mat.str()))
+		print("Checking %d options to append to %d columns."%(len(options), nCols))# \n%s\n"%(len(options),mat.str()))
 		
 		#for move in options:
 			#newColUp = matrix(GF(2),vector(w^nCols)).transpose()
