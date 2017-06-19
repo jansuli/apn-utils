@@ -232,7 +232,8 @@ class MonteCarlo(object):
 		while datetime.datetime.utcnow()-begin < self.duration:
 			if self.run_simulation() != False:
 				games += 1
-			else break
+			else:
+				break
 			
 		moves_states = [ (p, self.board.next_state(state, p)) for p in legal ]
 		
