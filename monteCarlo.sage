@@ -230,11 +230,8 @@ class MonteCarlo(object):
 		games = 0
 		begin = datetime.datetime.utcnow()
 		while datetime.datetime.utcnow()-begin < self.duration:
-			if self.run_simulation() != False:
-				games += 1
-			else:
-				break
-			
+			self.run_simulation()
+			games += 1			
 		moves_states = [ (p, self.board.next_state(state, p)) for p in legal ]
 		
 		print ("Simulated %d games."%games)
