@@ -230,8 +230,10 @@ class MonteCarlo(object):
 		games = 0
 		begin = datetime.datetime.utcnow()
 		while datetime.datetime.utcnow()-begin < self.duration:
-			self.run_simulation()
-			games += 1			
+			if self.run_simulation() != False:
+				games += 1
+			else:
+				break
 		moves_states = [ (p, self.board.next_state(state, p)) for p in legal ]
 		
 		print ("Simulated %d games."%games)
@@ -291,6 +293,7 @@ class MonteCarlo(object):
 					if win == 1:
 						break
 				else:
+					print("Played that several times")
 					return False
 			else:
 				#print("not enough choices left: we have %d options to fill %d columns"%(len(legal), needed))
@@ -301,7 +304,7 @@ class MonteCarlo(object):
 				continue
 			self.plays[state] += 1
 			if win:
-				self.wins[state] = win
+				self.wins[state] += win
 m = 5
 game = Board(m, nWorkers = mp.cpu_count())
 monte = MonteCarlo(game, maxCols = 2^m -1, time = 30)
