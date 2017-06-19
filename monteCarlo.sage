@@ -234,7 +234,7 @@ class MonteCarlo(object):
 				
 				win = self.board.win(statesCopy)
 				
-				if win:
+				if win == 1:
 					break
 			else:
 				break
@@ -244,7 +244,7 @@ class MonteCarlo(object):
 				continue
 			self.plays[state] += 1
 			if win:
-				self.wins[state] += 1
+				self.wins[state] = win
 m = 5
 game = Board(m, nWorkers = mp.cpu_count())
 monte = MonteCarlo(game, maxCols = 2^m -1, time = 120)
