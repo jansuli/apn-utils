@@ -2,6 +2,7 @@ from time import time
 import datetime
 from functools import partial
 import multiprocessing as mp
+from numpy import array_split
 
 def checkMove(mat, nCols,V, w, inds,move):
 	newColUp = matrix(GF(2),vector(w^nCols)).transpose()
@@ -22,7 +23,52 @@ def checkMove(mat, nCols,V, w, inds,move):
 				return
 		else:
 			return move
-
+			
+def multiCoreRankCheck(mat, nCols, V, w, inds, nWorkers, move):
+	newColUp = matrix(GF(2),vector(w^nCols)).transpose()
+	newColLo = matrix(GF(2),vector(move)).transpose()
+	newCol = newColUp.stack(newColLo)
+	matNew = mat.augment(newCol)
+	
+	def rankCheck(newMat, inds, resList):
+		for ind in inds:
+			cols = matNew[:, ind].columns()
+			if V.are_linearly_dependent(cols):	# faster than rank checking it seems
+				resList.append(False)
+				return
+		else:
+			resList.append(True)
+			return
+		
+	N = nCols + 1
+	if N <= 3:
+		cols = matNew.columns()
+		if not V.are_linearly_dependent(cols):
+			return move
+	else:
+		if __name__ == "__main__":
+			manager = mp.Manager()
+			resList = manager.list()
+			workers = []
+			
+			indexChunks = array_split(inds, nWorkers).tolist()
+			
+			for i in range(nWorkers):
+				p = mp.Process(target= rankCheck, (mat,indexChunks[i],resList))
+				workers.append(p)
+				p.start()
+				
+			while len(workers) > 0:
+				for p in workers:
+					if not p.is_alive():
+						workers.remove(p)
+						break
+				if False in resList:
+					for p in workers:
+						p.terminate()
+						p.join()
+						return False
+			return move
 
 class Board():
 	def __init__(self, m = 3, nWorkers = 2):
@@ -116,14 +162,21 @@ class Board():
 						#break
 				#else:
 					#legal.append(move)
-		if __name__ == "__main__": 
-			inds = None if nCols < 3 else self.combIndices[nCols + 1]
-			moveChecker = partial(checkMove, mat, nCols, V, w, inds)
-			p = mp.Pool(processes = self.nWorkers)
-			res = p.map(moveChecker, options)
-			legal = [opt for opt in res if opt != None]
-			p.close()
-			p.join()
+		if len(options) < nWorkers:
+			if __name__ == "__main__": 
+				inds = None if nCols < 3 else self.combIndices[nCols + 1]
+				moveChecker = partial(checkMove, mat, nCols, V, w, inds)
+				p = mp.Pool(processes = self.nWorkers)
+				res = p.map(moveChecker, options)
+				legal = [opt for opt in res if opt != None]
+				p.close()
+				p.join()
+		else:
+			print("Using multicore rank check")
+			for move in options:
+				res = multiCoreRankCheck(mat,nCols,V,w, inds, nWorkers, move)
+				if res:
+					legal.append(res)
 			
 		self.legalDict[current] = legal
 		
