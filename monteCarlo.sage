@@ -139,8 +139,8 @@ class Board():
 		if len(current) == 2^m - 1:
 			print ("Won!!!!!!!!!!!!!%d"%(2^m -1))
 			print current
-			#with open("monte_perm%.1f.tuple"%time(), "w") as f:
-				#f.write(str(current))
+			with open("monte_perm%.1f.tuple"%time(), "w") as f:
+				f.write(str(current))
 			return 1
 		else:
 			return 0
@@ -207,41 +207,36 @@ class MonteCarlo(object):
 		for t in range(1,maxMoves+1):	
 			legal = self.board.legal_plays(statesCopy)
 			if legal and len(legal)>0:
-				if not set([self.board.next_state(state, p) for p in legal]).issubset(visitedStates):
+				moves_states = [ (p, self.board.next_state(state, p)) for p in legal ]
 				
-					moves_states = [ (p, self.board.next_state(state, p)) for p in legal ]
-					
-					if all(plays.get(S) for p,S in moves_states):
-						# if we have stats on all legal moves, use them
-						log_total = numerical_approx(log(sum(plays[S] for p,S in moves_states)))
-						value, move, state = max(
-							(numerical_approx((wins[S] / plays[S]) + self.C * sqrt(log_total / plays[S])), p,S)
-							for p,S in moves_states
-						)
-					else:
-						move, state = choice(moves_states)
-					#print move, state
-						
-					statesCopy.append(state)
-					
-					if expand and state not in self.plays:
-						expand = False
-						self.plays[state] = 0
-						self.wins[state] = 0
-						if t > self.max_depth:
-							self.max_depth = t
-					
-					visitedStates.add(state)
-					
-					win = self.board.win(statesCopy)
-					
-					if win:
-						break
+				if all(plays.get(S) for p,S in moves_states):
+					# if we have stats on all legal moves, use them
+					log_total = numerical_approx(log(sum(plays[S] for p,S in moves_states)))
+					value, move, state = max(
+						(numerical_approx((wins[S] / plays[S]) + self.C * sqrt(log_total / plays[S])), p,S)
+						for p,S in moves_states
+					)
 				else:
+					move, state = choice(moves_states)
+				#print move, state
+					
+				statesCopy.append(state)
+				
+				if expand and state not in self.plays:
+					expand = False
+					self.plays[state] = 0
+					self.wins[state] = 0
+					if t > self.max_depth:
+						self.max_depth = t
+				
+				visitedStates.add(state)
+				
+				win = self.board.win(statesCopy)
+				
+				if win:
 					break
 			else:
 				break
-			
 				
 		for state in visitedStates:
 			if state not in self.plays:
@@ -250,8 +245,8 @@ class MonteCarlo(object):
 			if win:
 				self.wins[state] += 1
 m = 5
-game = Board(m, nWorkers = 8)
-monte = MonteCarlo(game, maxCols = 2^m -1, time = 30)
+game = Board(m, nWorkers = mp.cpu_count())
+monte = MonteCarlo(game, maxCols = 2^m -1, time = 120)
 monte.update(game.start())
 
 won = False
