@@ -28,14 +28,19 @@ for upper in k:
 	matK = matK.augment(col)
 print("Done, now generating indices.")
 
-indices = Combinations(2^m - 1, 4).list()
-indices = [ind for ind in indices if 2^m-2 in ind]
+indexDict = dict()
+
+for i in range(1,5):
+	indices = Combinations(2^m - i, 4).list()
+	indices = [ind for ind in indices if 2^m-1-i in ind]
+	indexDict[2^m-i] = indices
 
 def checkOption(mat, upper, opt):
 	colUpper = matrix(GF(2), vector(upper)).transpose()
 	colLower = matrix(GF(2), vector(opt)).transpose()
 	col = colUpper.stack(colLower)
 	testMat = mat.augment(col)
+	indices = indexDict[mat.ncols()]
 	
 	for ind in indices:
 		cols = testMat[:, ind].columns()
@@ -44,27 +49,27 @@ def checkOption(mat, upper, opt):
 	else:
 		return opt
 		
-checked = []
-while len(checked) < 2^m-1:
-	index = choice(range(2^m-1))
-	top = matK[0, index]
-	if not top in checked:
-		bottom = matK[1, index]
-		options = [elem for elem in K if elem != K(0) and elem != bottom]
-		
-		matKrem = matK[:, :index].augment(matK[:, index+1:])
+removeFour = Combinations(2^m-1, 4).list()
+for removed in removeFour:
+	tops = matK[0, removed]
+	bottoms = matK[1, removed]
+	matKrem = matK
+	for ind in removed:			
+		matKrem = matKrem[:, :index].augment(matK[:, index+1:])
 				
-		matGF = matrix(GF(2), 2*m, 0)
-		for col in matKrem.columns():
-			colGFUp = matrix(GF(2), vector(col[0])).transpose()
-			colGFLo = matrix(GF(2), vector(col[1])).transpose()
-			colGF = colGFUp.stack(colGFLo)
-			matGF = matGF.augment(colGF)
+	matGF = matrix(GF(2), 2*m, 0)
+	for col in matKrem.columns():
+		colGFUp = matrix(GF(2), vector(col[0])).transpose()
+		colGFLo = matrix(GF(2), vector(col[1])).transpose()
+		colGF = colGFUp.stack(colGFLo)
+		matGF = matGF.augment(colGF)
+	backup = matGF
 		
+	for top in tops:
+		if tops.index(top) == 0:
+			matGF = backup
 		optionChecker = partial(checkOption, matGF, top)
-		
-		print("Investigating options for removed column %s.\n"%str(matK[:, index]))
-		
+		options = [elem for elem in K if elem != K(0) and elem != bottoms[tops.index(top)]]
 		if __name__ == "__main__":
 			p = mp.Pool(processes = mp.cpu_count())
 			res = p.map(optionChecker, options)
@@ -73,17 +78,25 @@ while len(checked) < 2^m-1:
 			p.join()
 					
 			if len(res)>0:
-				for r in res:
-					print("We found a new APN, Saving it")
-					colGFUp = matrix(GF(2), vector(upper)).transpose()
-					colGFLo = matrix(GF(2), vector(r)).transpose()
-					col = colGFUp.stack(colGFLo)
+				r = res[0]
 						
-					save = matGF.augment(col)
+				colGFUp = matrix(GF(2), vector(top)).transpose()
+				colGFLo = matrix(GF(2), vector(r)).transpose()
+				col = colGFUp.stack(colGFLo)
+							
+				matGF = matGF.augment(col)
+						
+				if matGF.ncols() == 2^m - 1:
 					with open("results/apn_%.1f"%time(),"w") as f:
-						f.write(save.str())
+						f.write(matGF.str())
+					break
+							
+				tops.remove(top)
+				options.remove(r)
+				continue
+			else:
+				break
 						
-		checked.append(top)
 			
 			
 		
