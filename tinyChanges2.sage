@@ -40,7 +40,7 @@ def checkOption(mat, upper, opt):
 	colLower = matrix(GF(2), vector(opt)).transpose()
 	col = colUpper.stack(colLower)
 	testMat = mat.augment(col)
-	indices = indexDict[mat.ncols()]
+	indices = indexDict[testMat.ncols()]
 	
 	for ind in indices:
 		cols = testMat[:, ind].columns()
