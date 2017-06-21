@@ -51,8 +51,8 @@ def checkOption(mat, upper, opt):
 		
 removeFour = Combinations(2^m-1, 4).list()
 for removed in removeFour:
-	tops = matK[0, removed]
-	bottoms = matK[1, removed]
+	tops = matK[0, removed].list()
+	bottoms = matK[1, removed].list()
 	matKrem = matK
 	for ind in removed:			
 		matKrem = matKrem[:, :ind].augment(matK[:, ind+1:])
@@ -87,6 +87,7 @@ for removed in removeFour:
 				matGF = matGF.augment(col)
 						
 				if matGF.ncols() == 2^m - 1:
+					print("New APN")
 					with open("results/apn_%.1f"%time(),"w") as f:
 						f.write(matGF.str())
 					break
