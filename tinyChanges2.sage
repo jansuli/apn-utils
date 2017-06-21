@@ -78,6 +78,7 @@ for removed in removeFour:
 			p.join()
 					
 			if len(res)>0:
+				print("Taking a step")
 				r = res[0]
 						
 				colGFUp = matrix(GF(2), vector(top)).transpose()
