@@ -1,14 +1,13 @@
 from functools import partial
 import multiprocessing as mp
 from time import time
-from tqdm import tqdm
 
-def f(x):
-	return x^3
-	
 m = 6
 K.<w> = GF(2^m, 'w')
 V = VectorSpace(GF(2), 2*m)
+
+def f(x):
+	return x^3 + x^10 + w*x^24
 
 print("Analysing f(x).")
 image = dict()
@@ -49,7 +48,7 @@ def checkOption(mat, upper, opt):
 for key in image.keys():
 	tops = image[key]
 	if len(tops) > 1:
-		for upper in tqdm(tops):
+		for upper in tops:
 			rem = k.index(upper)
 			matKrem = matK[:, :rem].augment(matK[:, rem+1:])
 			
@@ -72,7 +71,7 @@ for key in image.keys():
 				
 				if len(res)>0:
 					for r in res:
-						tqdm.write("We found a new APN, Saving it")
+						print("We found a new APN, Saving it")
 						colGFUp = matrix(GF(2), vector(upper)).transpose()
 						colGFLo = matrix(GF(2), vector(r)).transpose()
 						col = colGFUp.stack(colGFLo)
