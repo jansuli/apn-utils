@@ -96,6 +96,7 @@ for removed in removeFour:
 				options.remove(r)
 				continue
 			else:
+				print("did not work")
 				break
 						
 			
