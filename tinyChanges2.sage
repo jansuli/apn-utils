@@ -47,7 +47,7 @@ def checkOption(mat, upper, opt):
 checked = []
 while len(checked) < 2^m-1:
 	index = choice(range(2^m-1))
-	top = mat[0, index]
+	top = matK[0, index]
 	if not top in checked:
 		bottom = matK[1, index]
 		options = [elem for elem in K if elem != K(0) and elem != bottom]
