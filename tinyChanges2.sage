@@ -55,7 +55,7 @@ for removed in removeFour:
 	bottoms = matK[1, removed]
 	matKrem = matK
 	for ind in removed:			
-		matKrem = matKrem[:, :index].augment(matK[:, index+1:])
+		matKrem = matKrem[:, :ind].augment(matK[:, ind+1:])
 				
 	matGF = matrix(GF(2), 2*m, 0)
 	for col in matKrem.columns():
