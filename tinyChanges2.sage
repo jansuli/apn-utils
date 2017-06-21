@@ -63,7 +63,7 @@ while len(checked) < 2^m-1:
 		
 		optionChecker = partial(checkOption, matGF, top)
 		
-		print("Investigating options for removed column %s.\n" str(matK[:, index]))
+		print("Investigating options for removed column %s.\n"%str(matK[:, index]))
 		
 		if __name__ == "__main__":
 			p = mp.Pool(processes = mp.cpu_count())
