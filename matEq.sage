@@ -27,7 +27,7 @@ variations = Combinations(4).list()[1:] # 15 nontrivial combinations of 4 column
 A = matrix(G, 0, n)
 # Generate A
 print("Building matrix A. May take some time.")
-for ind in combInd:
+for ind in tqdm(combInd):
 	for var in variations:
 		newRow = matrix(G, 1, n)
 		nInd = [ind[i] for i in var]
