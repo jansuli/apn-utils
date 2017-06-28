@@ -43,7 +43,8 @@ for k in range(1,6):
 		with open("MatrixADim%d.data"%k,"w") as f:
 			pickle.dump(A, f)
 	else:
-		A = pickle.load("MatrixADim%.data"%k) 
+		with open("MatrixADim%d.data"%k,"w") as f:
+			A = pickle.load(f) 
 
 	# row reduced echelon L, transformation T
 	print("Transforming.")
@@ -54,7 +55,8 @@ for k in range(1,6):
 		with open("LTDim%d.data"%k, "w") as f:
 			pickle.dump( (L,T,Tinv) , f)
 	else:
-		(L,T,Tinv) = pickle.load("LTDim%d.data"%k)
+		with open("LTDim%d.data"%k, "r") as f: 
+			(L,T,Tinv) = pickle.load(f)
 	
 if cont:
 	print("Testing with gold function:")
