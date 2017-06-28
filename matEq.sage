@@ -13,9 +13,6 @@ G.<y> = GF(2^(2*k), 'y')
 K.<w> = GF(2^k, 'w')
 V = VectorSpace(G, m)
 	#K = G.subfields(m, 'w')[0][0]
-
-def f(x):
-	return x^3
 	
 basis = [y^i for i in range(2*k)]
 def kVecTok2field( vec, offset=0):
@@ -55,6 +52,8 @@ else:
 	with open("LTDim%d.data"%k, "r") as f: 
 		(L,T,Tinv) = pickle.load(f)
 	
+def f(x):
+	return x^3
 if cont:
 	print("Testing with gold function:")
 	xT = []		# top of columns
