@@ -43,7 +43,7 @@ for k in range(1,6):
 		with open("MatrixADim%d.data"%k,"w") as f:
 			pickle.dump(A, f)
 	else:
-		with open("MatrixADim%d.data"%k,"w") as f:
+		with open("MatrixADim%d.data"%k,"r") as f:
 			A = pickle.load(f) 
 
 	# row reduced echelon L, transformation T
