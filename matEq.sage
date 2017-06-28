@@ -52,7 +52,7 @@ for k in range(1,6):
 		L, T = E[:, :n], E[:, n:]
 		Tinv = T.inverse()
 		with open("LTDim%d.data"%k, "w") as f:
-			pickle.dump( (L,T,Tinv) )
+			pickle.dump( (L,T,Tinv) , f)
 	else:
 		(L,T,Tinv) = pickle.load("LTDim%d.data"%k)
 	
