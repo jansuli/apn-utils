@@ -6,9 +6,9 @@ import os
 cont = False
 
 for k in range(1,6):
-	print("k is %d"%k)
 	n = 2^k-1
-	m = binomial(n,4)*15
+	m = binomial(n, 2) + binomial(n,3) + binomial(n,4)
+	print("k = %d, n = %d, m = %d."%(k,n,m))
 	G.<y> = GF(2^(2*k), 'y')
 	K.<w> = GF(2^k, 'w')
 	V = VectorSpace(G, m)
@@ -27,19 +27,16 @@ for k in range(1,6):
 		return elem
 
 	print("Generating indices...")
-	combInd = Combinations(n, 4)
-	variations = Combinations(4).list()[1:] # 15 nontrivial combinations of 4 columns
+	combInd = Combinations(n, 4).list() + Combinations(n,3).list() + Combinations(n,2).list()
 
 	if not os.path.isfile("MatrixADim%d.data"%k):
 		A = matrix(G, 0, n)
 		# Generate A
 		print("Building matrix A. May take some time.")
 		for ind in tqdm(combInd):
-			for var in variations:
-				newRow = matrix(G, 1, n)
-				nInd = [ind[i] for i in var]
-				newRow[:,nInd] = 1
-				A = A.stack(newRow)
+			newRow = matrix(G, 1, n)
+			newRow[:,ind] = 1
+			A = A.stack(newRow)
 		with open("MatrixADim%d.data"%k,"w") as f:
 			pickle.dump(A, f)
 	else:
