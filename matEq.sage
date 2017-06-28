@@ -1,5 +1,6 @@
+from sage.geometry.hyperplane_arrangement.affine_subspace import AffineSubspace
 from tqdm import tqdm
-k = 3
+k = 5
 n = 2^k-1
 m = binomial(n,4)*15
 G.<y> = GF(2^(2*k), 'y')
@@ -45,7 +46,7 @@ xB = []		# bottom of columns
 
 for i in range(n):
 	xT.append(kVecTok2field(vector(w^i), 0))
-	xB.append(kVecTok2field(vector(f(w^i)),3))
+	xB.append(kVecTok2field(vector(f(w^i)),k))
 xT = vector(G, xT)
 xB = vector(G, xB)
 x = xT + xB
@@ -53,16 +54,53 @@ x = xT + xB
 inhom = A*x
 
 print("Generating conditions")
-VBasis = V.basis()
-optionBasis = VBasis[:]
-TB = T[n:, :]
-for row in tqdm(TB.rows()):
-	row = matrix(row)
-	print("our option space had dimension %d." % len(optionBasis))
-	zero = row.right_kernel()
-	zeroBasis = zero.basis()
-	optionBasis = [vec for vec in optionBasis if vec not in zeroBasis]
-	print("now it has dim %d."% len(optionBasis))
+TRed = T[:, :n]
+TinvRed = Tinv[:, :n]
+xi = TinvRed*xT
+avoid = set()
+for i in range(m):
+	row = TinvRed[i, :]
+	comp = matrix(G, 1,1, xi[i])
+	rowExt = row.augment(comp)
+	print comp
+	if row.rank() == rowExt.rank():
+		kern = row.right_kernel()
+		sol = row.solve_right(comp).columns()[0]
+		print sol
+		solSpace = AffineSubspace(sol,kern)
+		avoid.add(solSpace)
+		print solSpace
+		print("sol space %d."%i)
+	else:
+		print("Not solvable")
+
+print("Testing bottom options")
+sub = []
+for i in range(n):
+	sub.append(kVecTok2field(vector(w^i), k))
+	
+variate = [xB]
+solutions = []
+while len(solutions) < 1:
+	for var in variate:
+		count = 0
+		print("Variate is %s."%str(var))
+		while count < n-1:
+			cp = var[:]
+			for elem in sub:
+				cp[count] = elem
+				print("Testing \n%s"%str(cp))
+				for affSpace in avoid:
+					if cp in affSpace:
+						print("no luck %d "%len(solutions))
+						break
+				else:
+					print("sol!!!!")
+					solutions.append(cp[:])
+				if not cp in variate: variate.append(cp)	
+			count += 1
+	
+
 	
 #result = [0]
 
