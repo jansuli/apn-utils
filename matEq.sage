@@ -3,57 +3,57 @@ from tqdm import tqdm
 import pickle
 import os
 
-cont = False
+cont = true
 
-for k in range(1,6):
-	n = 2^k-1
-	m = binomial(n, 2) + binomial(n,3) + binomial(n,4)
-	print("k = %d, n = %d, m = %d."%(k,n,m))
-	G.<y> = GF(2^(2*k), 'y')
-	K.<w> = GF(2^k, 'w')
-	V = VectorSpace(G, m)
+k= 5
+n = 2^k-1
+m = binomial(n, 2) + binomial(n,3) + binomial(n,4)
+print("k = %d, n = %d, m = %d."%(k,n,m))
+G.<y> = GF(2^(2*k), 'y')
+K.<w> = GF(2^k, 'w')
+V = VectorSpace(G, m)
 	#K = G.subfields(m, 'w')[0][0]
 
-	def f(x):
-		return x^3
-		
-	basis = [y^i for i in range(2*k)]
-	def kVecTok2field( vec, offset=0):
-		elem = G(0)
-		for i in range(len(vec)):
-			if vec[i] != 0:
-				elem += basis[i+offset]
-		print("Transformed vector %s into field element %s (with offset %d)."%(str(vec), str(elem), offset))		
-		return elem
+def f(x):
+	return x^3
+	
+basis = [y^i for i in range(2*k)]
+def kVecTok2field( vec, offset=0):
+	elem = G(0)
+	for i in range(len(vec)):
+		if vec[i] != 0:
+			elem += basis[i+offset]
+	print("Transformed vector %s into field element %s (with offset %d)."%(str(vec), str(elem), offset))		
+	return elem
 
-	print("Generating indices...")
-	combInd = Combinations(n, 4).list() + Combinations(n,3).list() + Combinations(n,2).list()
+print("Generating indices...")
+combInd = Combinations(n, 4).list() + Combinations(n,3).list() + Combinations(n,2).list()
 
-	if not os.path.isfile("MatrixADim%d.data"%k):
-		A = matrix(G, 0, n)
-		# Generate A
-		print("Building matrix A. May take some time.")
-		for ind in tqdm(combInd):
-			newRow = matrix(G, 1, n)
-			newRow[:,ind] = 1
-			A = A.stack(newRow)
-		with open("MatrixADim%d.data"%k,"w") as f:
-			pickle.dump(A, f)
-	else:
-		with open("MatrixADim%d.data"%k,"r") as f:
-			A = pickle.load(f) 
+if not os.path.isfile("MatrixADim%d.data"%k):
+	A = matrix(G, 0, n)
+	# Generate A
+	print("Building matrix A. May take some time.")
+	for ind in tqdm(combInd):
+		newRow = matrix(G, 1, n)
+		newRow[:,ind] = 1
+		A = A.stack(newRow)
+	with open("MatrixADim%d.data"%k,"w") as f:
+		pickle.dump(A, f)
+else:
+	with open("MatrixADim%d.data"%k,"r") as f:
+		A = pickle.load(f) 
 
-	# row reduced echelon L, transformation T
-	print("Transforming.")
-	if not os.path.isfile("LTDim%d.data"%k):
-		E = A.extended_echelon_form()
-		L, T = E[:, :n], E[:, n:]
-		Tinv = T.inverse()
-		with open("LTDim%d.data"%k, "w") as f:
-			pickle.dump( (L,T,Tinv) , f)
-	else:
-		with open("LTDim%d.data"%k, "r") as f: 
-			(L,T,Tinv) = pickle.load(f)
+# row reduced echelon L, transformation T
+print("Transforming.")
+if not os.path.isfile("LTDim%d.data"%k):
+	E = A.extended_echelon_form()
+	L, T = E[:, :n], E[:, n:]
+	Tinv = T.inverse()
+	with open("LTDim%d.data"%k, "w") as f:
+		pickle.dump( (L,T,Tinv) , f)
+else:
+	with open("LTDim%d.data"%k, "r") as f: 
+		(L,T,Tinv) = pickle.load(f)
 	
 if cont:
 	print("Testing with gold function:")
