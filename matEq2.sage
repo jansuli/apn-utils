@@ -37,23 +37,14 @@ for i in range(n):
 	
 A = matrix(G, 0, n)
 # Generate A
-columnOneIndices = dict()
-
-for i in range(n):
-	columnOneIndices[i] = set()
 
 print("Building matrix A. May take some time.")
-rowCount = 0
 for ind in tqdm(combInd):
 	newRow = matrix(G, 1, n)
 	newRow[:,ind] = 1
 	A = A.stack(newRow)
 	
-	# update dict for later on
-	for colIndex in ind:
-		columnOneIndices[colIndex].add(rowCount)
-	rowCount += 1
-
+	
 print("Testing with gold function:")
 xT = []		# top of columns
 xB = []		# bottom of columns
