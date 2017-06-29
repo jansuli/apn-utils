@@ -92,7 +92,7 @@ for var in lookedAt:
 		for elem in sub:
 			test = var[:]
 			test[i] = elem
-			lookedAt.append(test)
+			if not test in lookedAt: lookedAt.append(test)
 			#print("Testing %s."%str(test))
 			if checkConstraints(test) == True:
 				print ("Success!!!! Found a solution. We now have found %d apns."%len(solutions))
