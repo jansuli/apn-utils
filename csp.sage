@@ -14,7 +14,7 @@ comb2 = Combinations(n,2).list()
 comb3 = Combinations(n,3).list()
 comb4 = Combinations(n,4).list()
 
-combInd = comb2 + comb3 + comb4
+combInd = comb3 
 print("Setting up fields and VectorSpace")
 G.<y> = GF(2^(2*k), 'y')
 K.<w> = GF(2^k, 'w')
@@ -74,7 +74,7 @@ for i in range(n):
 print("Generating variables for CSP")
 vars = []
 for i in range(n):
-	var = "%2d"%i
+	var = i
 	vars.append(var)
 	indices = randint(0, len(sub), 2*n)
 	dom = [xB[i]] + [xB[i] + sub[j] for j in indices]
@@ -83,17 +83,25 @@ for i in range(n):
 print("Adding constraints...")
 i = 0
 for comb in combInd:
-	affectedVars = [vars[j] for j in comb]
-	topComponents = [xT[j] for j in comb]
-	def getFunction(comps):
+	affected = [vars[j] for j in range(max(comb)+1)]
+	compareTop = [xT[j] for j in range(max(comb)+1)]
+	def getFunction(comps, indices):
 		def func(*args):
-			s = 0
-			for l in range(len(comps)):
-				s += comps[l] + args[l] 	
-			return s != 0
+			columns = [ comps[i] + args[i] for i in range(len(comps))]
+			test = columns[indices[0]] + columns[indices[1]] + columns[indices[2]]
+			if test != 0:
+					others = [col for col in columns if columns.index(col) not in indices]
+					for col in others:
+						if test == col:
+							#print ("3 cols linearly independent, but sum of other column.")
+							return False
+					else:
+						return True
+			else:
+				return False		
 		return func
-	fx = getFunction(topComponents)
-	p.addConstraint(FunctionConstraint(fx), affectedVars)
+	fx = getFunction(compareTop, comb)
+	p.addConstraint(FunctionConstraint(fx), affected)
 	i += 1
 	
 #i = 0
@@ -139,12 +147,12 @@ it = p.getSolutionIter()
 count = 0
 while True:
 	solution = it.next()
-
+	count += 1
 	print("Saving solution.")
 	print("We currently got %d solutions."%count)
 	with open("csp%dSol%dBottomDict"%(k,count), "w") as f:
-		pickle.dump(sol, f)
-	count += 1
+		pickle.dump(solution, f)
+	
 
 	
 
