@@ -116,7 +116,7 @@ def check3Dependence(sol):
 	for ind in comb3:
 		test = [v[i] for i in ind]
 		if sum(test) == 0:
-			print("found three lin dep cols:%s"%str(test))
+			print("found three lin dep comps in:%s"%str(v))
 			return False
 	else:
 		return True
