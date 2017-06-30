@@ -89,8 +89,8 @@ for comb in combInd:
 	def getFunction(comps):
 		def func(*args):
 			s = 0
-			for index in range(len(comps)):
-				s += comps[index] + args[index] 	
+			for l in range(len(comps)):
+				s += comps[l] + args[l] 	
 			return s != 0
 		return func
 	fx = getFunction(topComponents)
@@ -116,7 +116,7 @@ def check3Dependence(sol):
 	for ind in comb3:
 		test = [v[i] for i in ind]
 		if sum(test) == 0:
-			print("found three lin dep comps in:%s"%str(v))
+			#print("found three lin dep comps in:%s"%str(test))
 			return False
 	else:
 		return True
