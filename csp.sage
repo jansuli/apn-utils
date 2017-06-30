@@ -4,7 +4,7 @@ from numpy.random import randint
 from constraint import *
 
 
-k= 5
+k= 6
 n = 2^k-1
 m = binomial(n, 2) + binomial(n,3) + binomial(n,4)
 print("k = %d, n = %d, m = %d."%(k,n,m))
@@ -14,8 +14,7 @@ comb2 = Combinations(n,2).list()
 comb3 = Combinations(n,3).list()
 comb4 = Combinations(n,4).list()
 
-combInd = comb2 + comb3 + [comb4[j] for j in randint(0, binomial(n,4), floor(len(comb4)/2))]
-
+combInd = comb2 + comb3 + comb4
 print("Setting up fields and VectorSpace")
 G.<y> = GF(2^(2*k), 'y')
 K.<w> = GF(2^k, 'w')
@@ -141,16 +140,12 @@ count = 0
 while True:
 	solution = it.next()
 
-	if check4Dependence(solution):
-		print "And every 4 :)"
-		
-		print("Saving solution.")
-		print("We currently got %d solutions."%count)
-		with open("csp%dSol%dBottomDict"%(k,count), "w") as f:
-			pickle.dump(sol, f)
-		count += 1
-	else:
-		print "Found smthg but not 4 lin independent."
+	print("Saving solution.")
+	print("We currently got %d solutions."%count)
+	with open("csp%dSol%dBottomDict"%(k,count), "w") as f:
+		pickle.dump(sol, f)
+	count += 1
+
 	
 
 		
