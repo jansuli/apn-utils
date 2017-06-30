@@ -14,7 +14,7 @@ comb2 = Combinations(n,2).list()
 comb3 = Combinations(n,3).list()
 comb4 = Combinations(n,4).list()
 
-combInd = comb2 + [comb3[j] for j in randint(0, binomial(n,3), min(len(comb3),1000))] + [comb4[j] for j in randint(0, binomial(n,4), min(len(comb4),1000))]
+combInd = comb2 + [comb3[j] for j in randint(0, binomial(n,3), len(comb2))] + [comb4[j] for j in randint(0, binomial(n,4), len(comb2))]
 
 print("Setting up fields and VectorSpace")
 G.<y> = GF(2^(2*k), 'y')
