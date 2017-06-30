@@ -63,15 +63,19 @@ A = matrix(G, 0, n)
 p = Problem()
 
 xT = []		# top of columns
+xB = []
 for i in range(n):
 	xT.append(kVecTok2field(vector(w^i), 0))
+	xB.append(kVecTok2field(vector(f(w^i)),k))
 	
 print("Generating variables for CSP")
 vars = []
 for i in range(n):
 	var = "x%d"%i
 	vars.append(var)
-p.addVariables(vars, sub)
+	indices = randint(0, len(sub), n)
+	dom = [xB[i]] + [xB[i] + sub[j] for j in indices]
+	p.addVariable(var, dom)
 
 print("Adding constraints...")
 i = 0
@@ -99,10 +103,11 @@ for comb in combInd:
 	#fx = getFunction(b[i])
 	#p.addConstraint(FunctionConstraint(fx), affectedVars)
 	#i += 1
-	
+print("Done, now looking for solutions")
 it = p.getSolutionIter()
 count = 0
 while True:
+	print("We currently got %d solutions."%count)
 	sol = it.next()
 	print("Saving solution.")
 	with open("csp%dSol%dBottomDict"%(k,count), "w") as f:
