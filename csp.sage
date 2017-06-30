@@ -10,7 +10,11 @@ m = binomial(n, 2) + binomial(n,3) + binomial(n,4)
 print("k = %d, n = %d, m = %d."%(k,n,m))
 
 print("Generating indices...")
-combInd = Combinations(n, 4).list() + Combinations(n,3).list() + Combinations(n,2).list()
+comb2 = Combinations(n,2).list()
+comb3 = Combinations(n,3).list()
+comb4 = Combinations(n,4).list()
+
+combInd = comb2 + [comb3[j] for j in randint(0, binomial(n,3), min(len(comb3),1000))] + [comb4[j] for j in randint(0, binomial(n,4), min(len(comb4),1000))]
 
 print("Setting up fields and VectorSpace")
 G.<y> = GF(2^(2*k), 'y')
@@ -73,7 +77,7 @@ vars = []
 for i in range(n):
 	var = "x%d"%i
 	vars.append(var)
-	indices = randint(0, len(sub), n)
+	indices = randint(0, len(sub), 2*n)
 	dom = [xB[i]] + [xB[i] + sub[j] for j in indices]
 	p.addVariable(var, dom)
 
@@ -103,15 +107,46 @@ for comb in combInd:
 	#fx = getFunction(b[i])
 	#p.addConstraint(FunctionConstraint(fx), affectedVars)
 	#i += 1
+	
+def check3Dependence(sol):
+	s = []
+	for comp in sol:
+		s.append(sol[comp])
+	v = [xT[i] + s[i] for i in range(n)]
+	for ind in comb3:
+		test = [v[i] for i in ind]
+		if sum(test) == 0:
+			return False
+	else:
+		return True
+			
+def check4Dependence(sol):
+	s = []
+	for comp in sol:
+		s.append(sol[comp])
+	v = [xT[i] + s[i] for i in range(n)]
+	for ind in comb4:
+		test = [v[i] for i in ind]
+		if sum(test) == 0:
+			return False
+	else:
+		return True
+			
 print("Done, now looking for solutions")
 it = p.getSolutionIter()
 count = 0
 while True:
 	print("We currently got %d solutions."%count)
 	sol = it.next()
-	print("Saving solution.")
-	with open("csp%dSol%dBottomDict"%(k,count), "w") as f:
-		pickle.dump(sol, f)
-	count += 1
+	if check3Dependence(sol):
+		print "Also every 3 columns are linearly independent."
+		if check4Dependence:
+			print "And every 4 :)"
+			
+			print("Saving solution.")
+			with open("csp%dSol%dBottomDict"%(k,count), "w") as f:
+				pickle.dump(sol, f)
+			count += 1
+	
 
 		
