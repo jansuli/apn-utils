@@ -21,6 +21,27 @@ G.<y> = GF(2^(2*k), 'y')
 K.<w> = GF(2^k, 'w')
 V = VectorSpace(G, m)
 VBasis = V.basis()
+
+basis = [y^i for i in range(2*k)]
+
+def kVecTok2field( vec, offset=0):
+	elem = G(0)
+	for i in range(len(vec)):
+		if vec[i] != 0:
+			elem += basis[i+offset]
+	#print("Transformed vector %s into field element %s (with offset %d)."%(str(vec), str(elem), offset))		
+	return elem
+
+sub = [G(0)]
+for i in range(n):
+	sub.append(kVecTok2field(vector(w^i), k))
+	
+
+xT = []		# top of columns
+xB = []
+for i in range(n):
+	xT.append(kVecTok2field(vector(w^i), 0))
+	xB.append(kVecTok2field(vector(f(w^i)),k))
 	
 def f(x):
 	return x^3
@@ -48,7 +69,8 @@ kern = Tsub.right_kernel()
 
 variables = list(range(n))
 p = Problem()
-p.addVariables(variables, G.list()[1:])
+for var in variables:
+	p.addVariable(var, [xT[var] + s for s in sub])
 
 print("adding constraints")
 for baseVec in kern.basis_matrix().transpose().rows():
@@ -58,5 +80,6 @@ for baseVec in kern.basis_matrix().transpose().rows():
 def getBVec(sol):
 	b = V.linear_combination( (kern.basis()[i], sol.values()[i]) for i in range(n) )
 	return b
+	
 
 		
