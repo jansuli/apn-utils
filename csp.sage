@@ -7,7 +7,7 @@ from constraint import *
 
 k=5
 n = 2^k-1
-m = binomial(n, 2) + binomial(n,3) + binomial(n,4)
+m = n + binomial(n,3) + binomial(n,4)
 print("k = %d, n = %d, m = %d."%(k,n,m))
 
 print("Generating indices...")
@@ -24,6 +24,10 @@ VBasis = V.basis()
 	
 def f(x):
 	return x^3
+	
+print("Building row transformation matrix 'T'")
+
+T = matrix.identity(G,m)
 	
 basis = [y^i for i in range(2*k)]
 def kVecTok2field( vec, offset=0):
