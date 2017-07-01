@@ -22,6 +22,9 @@ K.<w> = GF(2^k, 'w')
 V = VectorSpace(G, m)
 VBasis = V.basis()
 
+def f(x):
+	return x^3
+	
 basis = [y^i for i in range(2*k)]
 
 def kVecTok2field( vec, offset=0):
@@ -43,8 +46,7 @@ for i in range(n):
 	xT.append(kVecTok2field(vector(w^i), 0))
 	xB.append(kVecTok2field(vector(f(w^i)),k))
 	
-def f(x):
-	return x^3
+
 	
 print("Building row transformation matrix 'T'")
 
