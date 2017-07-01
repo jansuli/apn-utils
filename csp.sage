@@ -1,20 +1,21 @@
 from tqdm import tqdm
 import pickle
 from numpy.random import randint
+from numpy import array_split
 from constraint import *
 
 
-k= 6
+k=5
 n = 2^k-1
 m = binomial(n, 2) + binomial(n,3) + binomial(n,4)
 print("k = %d, n = %d, m = %d."%(k,n,m))
 
 print("Generating indices...")
-comb2 = Combinations(n,2).list()
+#comb2 = Combinations(n,2).list()
 comb3 = Combinations(n,3).list()
 comb4 = Combinations(n,4).list()
 
-combInd = comb3 
+combInd = comb3 + comb4
 print("Setting up fields and VectorSpace")
 G.<y> = GF(2^(2*k), 'y')
 K.<w> = GF(2^k, 'w')
@@ -30,7 +31,7 @@ def kVecTok2field( vec, offset=0):
 	for i in range(len(vec)):
 		if vec[i] != 0:
 			elem += basis[i+offset]
-	print("Transformed vector %s into field element %s (with offset %d)."%(str(vec), str(elem), offset))		
+	#print("Transformed vector %s into field element %s (with offset %d)."%(str(vec), str(elem), offset))		
 	return elem
 	
 sub = [G(0)]
@@ -63,7 +64,7 @@ A = matrix(G, 0, n)
 ##b = A*x
 
 #b = A*xT
-p = Problem()
+p = Problem(MinConflictsSolver())
 
 xT = []		# top of columns
 xB = []
@@ -72,39 +73,25 @@ for i in range(n):
 	xB.append(kVecTok2field(vector(f(w^i)),k))
 	
 print("Generating variables for CSP")
-vars = []
+variables = []
 for i in range(n):
 	var = i
-	vars.append(var)
+	variables.append(var)
 	indices = randint(0, len(sub), 2*n)
-	dom = [xB[i]] + [xB[i] + sub[j] for j in indices]
+	dom = [xB[i] + sub[j] for j in indices]
 	p.addVariable(var, dom)
 
 print("Adding constraints...")
-i = 0
 for comb in combInd:
-	affected = [vars[j] for j in range(max(comb)+1)]
-	compareTop = [xT[j] for j in range(max(comb)+1)]
-	def getFunction(comps, indices):
+	affected = [variables[j] for j in comb]
+	compareTop = [xT[j] for j in comb]
+	def getFunction(comps):
 		def func(*args):
-			columns = [ comps[i] + args[i] for i in range(len(comps))]
-			test = columns[indices[0]] + columns[indices[1]] + columns[indices[2]]
-			if test != 0:
-					others = [col for col in columns if columns.index(col) not in indices]
-					for col in others:
-						if test == col:
-							#print ("3 cols linearly independent, but sum of other column.")
-							return False
-					else:
-						return True
-			else:
-				return False		
+			return sum(comps) + sum(args) != 0		
 		return func
-	fx = getFunction(compareTop, comb)
+	fx = getFunction(compareTop)
 	p.addConstraint(FunctionConstraint(fx), affected)
-	i += 1
-	
-#i = 0
+# i=0
 #for comb in combInd:
 	#affectedVars = [vars[j] for j in comb]
 	#def getFunction(comp):
@@ -143,15 +130,18 @@ def check4Dependence(sol):
 		return True
 			
 print("Done, now looking for solutions")
-it = p.getSolutionIter()
-count = 0
-while True:
-	solution = it.next()
-	count += 1
-	print("Saving solution.")
-	print("We currently got %d solutions."%count)
-	with open("csp%dSol%dBottomDict"%(k,count), "w") as f:
-		pickle.dump(solution, f)
+#it = p.getSolutionIter()
+#count = 0
+#while True:
+	#try:
+		#solution = it.next()
+		#count += 1
+		#print("Saving solution.")
+		#print("We currently got %d solutions."%count)
+		#with open("csp%dSol%dBottomDict"%(k,count), "w") as f:
+			#pickle.dump(solution, f)
+	#except StopIteration:
+		#break
 	
 
 	
