@@ -77,7 +77,7 @@ variables = []
 for i in range(n):
 	var = i
 	variables.append(var)
-	indices = randint(0, len(sub), 2*n)
+	indices = randint(0, len(sub), 25)
 	dom = [xB[i] + sub[j] for j in indices]
 	p.addVariable(var, dom)
 
