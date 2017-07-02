@@ -7,7 +7,7 @@ from constraint import *
 from os import path
 
 
-k=4
+k=6
 n = 2^k-1
 m = binomial(n,3) + binomial(n,4)
 print("k = %d, n = %d, m = %d."%(k,n,m))
@@ -111,6 +111,12 @@ def check2Columns(listOfColIndices):
 			constraints += 1
 	print("Added %d constraints."%constraints)
 	return p
+	
+def updatedXBVec(sol):
+	XB = xB[:]
+	for ind in sol:
+		XB[ind] = XB[ind] + sol[ind]
+	return vector(G, XB)
 
 print("Looking for solutions...")
 testIndices = [sorted(sample(range(n),min(floor(n/2), 15))) for i in range(20)]
