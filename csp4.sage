@@ -85,8 +85,8 @@ def check2Columns(ind1, ind2):
 
 	reducedMatrix = A[:, [ind1,ind2]]
 	count = 0
-	print("Adding constraints.")
-	for row in tqdm(reducedMatrix.rows()):
+	print("Adding constraints...")
+	for row in reducedMatrix.rows():
 		#print row
 		if row == 0 and b[count] == 0:
 			print("In position %d impossible.")
