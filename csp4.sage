@@ -108,7 +108,7 @@ def check2Columns(listOfColIndices):
 				p.addConstraint(fx, variables)
 			count += 1
 			constraints += 1
-		print("Added %d constraints."%constraints)
+	print("Added %d constraints."%constraints)
 	return p
 
 testIndices = Combinations(n,2^(k-2)).list()
