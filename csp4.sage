@@ -1,12 +1,13 @@
 from tqdm import tqdm
 import pickle
-from numpy.random import randint, shuffle
+from numpy.random import randint
+from random import sample
 from numpy import array_split
 from constraint import *
 from os import path
 
 
-k=5
+k=4
 n = 2^k-1
 m = binomial(n,3) + binomial(n,4)
 print("k = %d, n = %d, m = %d."%(k,n,m))
@@ -112,7 +113,7 @@ def check2Columns(listOfColIndices):
 	return p
 
 print("Looking for solutions...")
-testIndices = [randint(0,n, 15) for i in range(20)]
+testIndices = [sorted(sample(range(n),min(floor(n/2), 15))) for i in range(20)]
 sols = 0
 for indexPair in testIndices:
 	print("testing columns %s"%str(indexPair))
@@ -124,7 +125,7 @@ for indexPair in testIndices:
 			sols += 1
 			print("Found a soultion (%d): %s"%(sols,str(sol)))
 			if sols < 25:
-				with open("cspk=%d_2Cols"%k, "w") as f:
+				with open("cspk=%d_2Cols%d"%(k, sols), "w") as f:
 					pickle.dump(sol, f)
 		except StopIteration:
 			print("Trying different columns")
