@@ -14,32 +14,16 @@ print("k = %d, n = %d, m = %d."%(k,n,m))
 
 print("Setting up fields and VectorSpace")
 
-if path.exists("MatrixA_k=%d.sageData"%k):
-	print("Opening")
-	with open("MatrixA_k=%d.sageData"%k, "r") as f:
-		A = pickle.load(f)
-		G = A.base_ring()
-		y = G.primitive_element()
-	print("Done")
-else:
-	G.<y> = GF(2^(2*k), 'y')
-	A = matrix(G, 0, n)
+#if path.exists("MatrixA_k=%d.sageData"%k):
+	#print("Opening")
+	#with open("MatrixA_k=%d.sageData"%k, "r") as f:
+		#A = pickle.load(f)
+		#G = A.base_ring()
+		#y = G.primitive_element()
+	#print("Done")
 
-	# Generate A
-	print("Generating indices...")
-	#comb2 = Combinations(n,2).list()
-	comb3 = Combinations(n,3).list()
-	comb4 = Combinations(n,4).list()
-	combInd = comb3 + comb4
-	
-	print("Building matrix A. May take some time.")
-	for ind in tqdm(combInd):
-		newRow = matrix(G, 1, n)
-		newRow[:,ind] = 1
-		A = A.stack(newRow)
-	with open("MatrixA_k=%d.sageData"%k, "w") as f:
-		pickle.dump(A, f)
-
+G.<y> = GF(2^(2*k), 'y')
+combInd = Combinations(n,3).list() + Combinations(n,4).list()
 K.<w> = GF(2^k, 'w', repr='log')
 R.<z> = PolynomialRing(K,'z')
 V = VectorSpace(G, m)
@@ -65,7 +49,7 @@ def k2fieldTokField( elem, offset=0):
 		if elemVec[i + offset] != 0: res += w^i
 	return res
 	
-sub = []
+sub = [G(0)]
 for i in range(n):
 	sub.append(kVecTok2field(vector(w^i), k))	
 
@@ -74,15 +58,9 @@ xB = []
 for i in range(n):
 	xT.append(kVecTok2field(vector(w^i), 0))
 	xB.append(kVecTok2field(vector(f(w^i)),k))
-		
-print("First, set of columns...")
-Acols = A.columns()
-print("Calculating inhomogenity.")
-
+	
 xi = vector(G, xT) + vector(G, xB)
-b = vector(G, m)
-for i in tqdm(range(n)):
-	b = b + xi[i]*Acols[i]
+		
 
 def getFunc(comp, multivariate=True):
 	if multivariate:
@@ -98,38 +76,30 @@ def check2Columns(listOfColIndices):
 	variables = listOfColIndices[:]
 	p = Problem()
 	for var in variables:
-		p.addVariable(var, sub)
+		p.addVariable(var, [xT[var] + s for s in sub if s != xB[var]])
 
-	reducedMatrix = A[:, listOfColIndices]
+	cols = set(listOfColIndices)
+	print("Collecting relevant indices.")
+	reducedIndices = [set(ind) for ind in combInd if set(ind).intersection(cols) != set()]
 	count = 0
 	print("Adding constraints...")
 	constraints = 0
-	for row in reducedMatrix.rows():
-		#print row
-		if row == 0 and b[count] == 0:
-			print("In position %d impossible.")
-			return False
-		elif row == 0 and b[count] != 0:
-			#print("lucky, no restriction")
-			count += 1
-		else:
-			z = row.nonzero_positions()
-			if len(z) == 1:
-				pos = z[0]
-				fx = getFunc(b[count], False)
-				p.addConstraint(fx,[variables[pos]])
-			else:
-				fx = getFunc(b[count])
-				p.addConstraint(fx, variables)
-			count += 1
-			constraints += 1
+	for ind in reducedIndices:
+		rhs = G(0)
+		for j in ind.difference(cols):
+			rhs += xi[j]
+		affected = list(cols.intersection(ind))
+		fx = getFunc(rhs)
+		p.addConstraint(fx, affected)
+		constraints += 1		
+		
 	print("Added %d constraints."%constraints)
 	return p
 	
 def updatedXVec(sol):
 	XB = xi[:]
 	for ind in sol:
-		XB[ind] = XB[ind] + sol[ind]
+		XB[ind] = sol[ind]
 	return XB
 	
 def polynomialFromVec(apnVec):
