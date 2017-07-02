@@ -62,7 +62,7 @@ for i in range(n):
 	xT.append(kVecTok2field(vector(w^i), 0))
 	xB.append(kVecTok2field(vector(f(w^i)),k))
 		
-print("Building row transformation matrix 'T'")
+print("Calculating inhomogenity.")
 
 x = vector(G, xT) + vector(G, xB)
 b= A*x
@@ -85,7 +85,8 @@ def check2Columns(ind1, ind2):
 
 	reducedMatrix = A[:, [ind1,ind2]]
 	count = 0
-	for row in reducedMatrix.rows():
+	print("Adding constraints.")
+	for row in tqdm(reducedMatrix.rows()):
 		#print row
 		if row == 0 and b[count] == 0:
 			print("In position %d impossible.")
@@ -106,6 +107,7 @@ def check2Columns(ind1, ind2):
 	return p
 
 testIndices = Combinations(n,2).list()
+print("Looking for solutions...")
 sols = 0
 for indexPair in testIndices:
 	p = check2Columns(indexPair[0], indexPair[1])
