@@ -69,23 +69,23 @@ print("Calculating inhomogenity.")
 x = vector(G, xT) + vector(G, xB)
 b= A*x
 
-def getFunc(comp, bivariate=True):
-	if bivariate:
-		def func(x,y):
-			return x+y != comp
+def getFunc(comp, multivariate=True):
+	if multivariate:
+		def func(*args):
+			return sum(args) != comp
 	else:
 		def func(x):
 			return x != comp
 	return func
 	
 
-def check2Columns(ind1, ind2):
-	variables = [ind1, ind2]
+def check2Columns(listOfColIndices):
+	variables = listOfColIndices[:]
 	p = Problem()
 	for var in variables:
 		p.addVariable(var, sub)
 
-	reducedMatrix = A[:, [ind1,ind2]]
+	reducedMatrix = A[:, listOfColIndices]
 	count = 0
 	print("Adding constraints...")
 	for row in reducedMatrix.rows():
@@ -98,21 +98,21 @@ def check2Columns(ind1, ind2):
 			count += 1
 		else:
 			z = row.nonzero_positions()
-			if len(z) == 2:
-				fx = getFunc(b[count])
-				p.addConstraint(fx, [ind1, ind2])
-			else:
+			if len(z) == 1:
 				pos = z[0]
 				fx = getFunc(b[count], False)
+				p.addConstraint(fx,[variables[pos]])
+			else:
+				fx = getFunc(b[count])
 				p.addConstraint(fx, [variables[pos]])
 			count += 1
 	return p
 
-testIndices = Combinations(n,2).list()
+testIndices = Combinations(n,4).list()
 print("Looking for solutions...")
 sols = 0
 for indexPair in testIndices:
-	p = check2Columns(indexPair[0], indexPair[1])
+	p = check2Columns(indexPair)
 	it = p.getSolutionIter()
 	while True:
 		try:
