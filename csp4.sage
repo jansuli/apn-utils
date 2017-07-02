@@ -112,7 +112,7 @@ def check2Columns(listOfColIndices):
 	return p
 
 print("Looking for solutions...")
-testIndices = shuffle(Combinations(n,15).list()).tolist()
+testIndices = [randint(0,n, 15) for i in range(20)]
 sols = 0
 for indexPair in testIndices:
 	print("testing columns %s"%str(indexPair))
