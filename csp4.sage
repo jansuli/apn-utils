@@ -30,10 +30,12 @@ else:
 	combInd = comb3 + comb4
 	
 	print("Building matrix A. May take some time.")
-	for ind in tqdm(combInd):
+	for ind in combInd:
 		newRow = matrix(G, 1, n)
 		newRow[:,ind] = 1
 		A = A.stack(newRow)
+	with open("MatrixA_k=%d.sageData"%k, "w") as f:
+		pickle.dump(A, f)
 
 K.<w> = GF(2^k, 'w')
 V = VectorSpace(G, m)
