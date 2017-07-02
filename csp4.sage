@@ -1,6 +1,6 @@
 from tqdm import tqdm
 import pickle
-from numpy.random import randint
+from numpy.random import randint, shuffle
 from numpy import array_split
 from constraint import *
 from os import path
@@ -111,10 +111,11 @@ def check2Columns(listOfColIndices):
 	print("Added %d constraints."%constraints)
 	return p
 
-testIndices = Combinations(n,15).list()
 print("Looking for solutions...")
+testIndices = shuffle(Combinations(n,15).list()).tolist()
 sols = 0
 for indexPair in testIndices:
+	print("testing columns %s"%str(indexPair))
 	p = check2Columns(indexPair)
 	it = p.getSolutionIter()
 	while True:
