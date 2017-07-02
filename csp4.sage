@@ -104,7 +104,7 @@ def check2Columns(listOfColIndices):
 				p.addConstraint(fx,[variables[pos]])
 			else:
 				fx = getFunc(b[count])
-				p.addConstraint(fx, [variables[pos]])
+				p.addConstraint(fx, variables)
 			count += 1
 	return p
 
