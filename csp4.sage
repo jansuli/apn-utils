@@ -121,6 +121,7 @@ def updatedXBVec(sol):
 print("Looking for solutions...")
 testIndices = [sorted(sample(range(n),min(floor(n/2), 15))) for i in range(20)]
 sols = 0
+solutions = []
 for indexPair in testIndices:
 	print("testing columns %s"%str(indexPair))
 	p = check2Columns(indexPair)
@@ -130,6 +131,7 @@ for indexPair in testIndices:
 			sol = it.next()
 			sols += 1
 			print("Found a soultion (%d): %s"%(sols,str(sol)))
+			solutions.append(sol)
 			if sols < 25:
 				with open("cspk=%d_2Cols%d"%(k, sols), "w") as f:
 					pickle.dump(sol, f)
