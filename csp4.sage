@@ -111,7 +111,7 @@ def check2Columns(listOfColIndices):
 	print("Added %d constraints."%constraints)
 	return p
 
-testIndices = Combinations(n,2^(k-2)).list()
+testIndices = Combinations(n,15).list()
 print("Looking for solutions...")
 sols = 0
 for indexPair in testIndices:
