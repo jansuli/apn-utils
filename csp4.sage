@@ -3,6 +3,7 @@ import pickle
 from numpy.random import randint
 from numpy import array_split
 from constraint import *
+from os import path
 
 
 k=5
@@ -10,14 +11,30 @@ n = 2^k-1
 m = binomial(n,3) + binomial(n,4)
 print("k = %d, n = %d, m = %d."%(k,n,m))
 
-print("Generating indices...")
-#comb2 = Combinations(n,2).list()
-comb3 = Combinations(n,3).list()
-comb4 = Combinations(n,4).list()
-
-combInd = comb3 + comb4
 print("Setting up fields and VectorSpace")
-G.<y> = GF(2^(2*k), 'y')
+
+if path.exists("MatrixA_k=%d.sageData"%k):
+	with open("MatrixA_k=%d.sageData"%k, "r") as f:
+		A = pickle.load(f)
+		G = A.base_ring()
+		y = G.primitive_element()
+else:
+	G.<y> = GF(2^(2*k), 'y')
+	A = matrix(G, 0, n)
+
+	# Generate A
+	print("Generating indices...")
+	#comb2 = Combinations(n,2).list()
+	comb3 = Combinations(n,3).list()
+	comb4 = Combinations(n,4).list()
+	combInd = comb3 + comb4
+	
+	print("Building matrix A. May take some time.")
+	for ind in tqdm(combInd):
+		newRow = matrix(G, 1, n)
+		newRow[:,ind] = 1
+		A = A.stack(newRow)
+
 K.<w> = GF(2^k, 'w')
 V = VectorSpace(G, m)
 VBasis = V.basis()
@@ -37,8 +54,7 @@ def kVecTok2field( vec, offset=0):
 
 sub = []
 for i in range(n):
-	sub.append(kVecTok2field(vector(w^i), k))
-	
+	sub.append(kVecTok2field(vector(w^i), k))	
 
 xT = []		# top of columns
 xB = []
@@ -47,14 +63,6 @@ for i in range(n):
 	xB.append(kVecTok2field(vector(f(w^i)),k))
 		
 print("Building row transformation matrix 'T'")
-		
-A = matrix(G, 0, n)
-# Generate A
-print("Building matrix A. May take some time.")
-for ind in tqdm(combInd):
-	newRow = matrix(G, 1, n)
-	newRow[:,ind] = 1
-	A = A.stack(newRow)
 
 x = vector(G, xT) + vector(G, xB)
 b= A*x
@@ -98,15 +106,18 @@ def check2Columns(ind1, ind2):
 	return p
 
 testIndices = Combinations(n,2).list()
+sols = 0
 for indexPair in testIndices:
 	p = check2Columns(indexPair[0], indexPair[1])
 	it = p.getSolutionIter()
 	while True:
 		try:
 			sol = it.next()
-			print("Found a soultion: %s"%str(sol))
-			with open("cspk=%d_2Cols"%k, "w") as f:
-				pickle.dump(sol, f)
+			sols += 1
+			print("Found a soultion (%d): %s"%(sols,str(sol)))
+			if sols < 25:
+				with open("cspk=%d_2Cols"%k, "w") as f:
+					pickle.dump(sol, f)
 		except StopIteration:
 			print("Trying different columns")
 			break
