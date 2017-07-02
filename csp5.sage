@@ -15,10 +15,12 @@ print("k = %d, n = %d, m = %d."%(k,n,m))
 print("Setting up fields and VectorSpace")
 
 if path.exists("MatrixA_k=%d.sageData"%k):
+	print("Opening")
 	with open("MatrixA_k=%d.sageData"%k, "r") as f:
 		A = pickle.load(f)
 		G = A.base_ring()
 		y = G.primitive_element()
+	print("Done")
 else:
 	G.<y> = GF(2^(2*k), 'y')
 	A = matrix(G, 0, n)
