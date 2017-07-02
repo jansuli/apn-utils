@@ -88,7 +88,7 @@ def check2Columns(listOfColIndices):
 	reducedMatrix = A[:, listOfColIndices]
 	count = 0
 	print("Adding constraints...")
-	print constraints = 0
+	constraints = 0
 	for row in reducedMatrix.rows():
 		#print row
 		if row == 0 and b[count] == 0:
