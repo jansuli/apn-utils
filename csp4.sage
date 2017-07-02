@@ -30,7 +30,7 @@ else:
 	combInd = comb3 + comb4
 	
 	print("Building matrix A. May take some time.")
-	for ind in combInd:
+	for ind in tqdm(combInd):
 		newRow = matrix(G, 1, n)
 		newRow[:,ind] = 1
 		A = A.stack(newRow)
