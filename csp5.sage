@@ -7,7 +7,7 @@ from constraint import *
 from os import path
 from time import time
 
-k=3
+k=6
 n = 2^k-1
 m = binomial(n,3) + binomial(n,4)
 print("k = %d, n = %d, m = %d."%(k,n,m))
@@ -73,9 +73,9 @@ for i in range(n):
 	xT.append(kVecTok2field(vector(w^i), 0))
 	xB.append(kVecTok2field(vector(f(w^i)),k))
 		
+print("First, set of columns...")
+Acols = A.columns()
 print("Calculating inhomogenity.")
-print("First, set of columns:")
-Acols = A.columns
 
 xi = vector(G, xT) + vector(G, xB)
 b = vector(G, m)
