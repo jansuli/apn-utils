@@ -1,14 +1,26 @@
 from constraint import *
+import multiprocessing as mp
+from numpy import array_split
+from time import sleep
 
-n = 7
+n = 10
+k = 2 # change 2 columns
 K.<w> = GF(2^n, 'w' ,repr="log")
+R.<x> = PolynomialRing(K, 'x')
 
 KBasis = [w^i for i in range(n)]
 DualBasis = K.dual_basis()
-CanBasis = VectorSpace(GF(2), n-1).basis()
 
-comb = Combinations(n-1).list()
-combN = Combinations(n).list()[1:]	# nontrivial row combinations
+canonicalBasis = {
+	n-1 : VectorSpace(GF(2), n-1).basis(),
+	n-2 : VectorSpace(GF(2), n-2).basis(),
+	}
+
+combinations = {
+	n-2 : Combinations(n-2).list(),
+	n-1 : Combinations(n-1).list(),
+	n : Combinations(n).list(),	# nontrivial row combinations for qam checking
+	}
 
 M = matrix(K, n,n)
 for i in range(n):
@@ -24,15 +36,16 @@ def checkRowRank(row):
 	testMatrix = matrix( GF(2), n,0)
 	for i in range(row.ncols()):
 		testMatrix = testMatrix.augment(matrix(vector(row[0,i])).transpose())
-	print testMatrix.str()
+	#print testMatrix.str()
 	return testMatrix.rank()
 
 def checkQAM(mat):
-	for ind in combN:		
+	N = mat.ncols()
+	for ind in combinations[N][1:]:		
 		testGenerator = matrix(sum(mat[ind,:]))
-		print testGenerator
-		if checkRowRank(testGenerator) != n-1:
-			print("no qam")
+		#print testGenerator
+		if checkRowRank(testGenerator) != N-1:
+			print("no qam caus of sum of %s"%str(ind))
 			return False
 	else:
 		print ("QAM")
@@ -41,13 +54,16 @@ def checkQAM(mat):
 def rowSpan(row, matrix = False):
 	ret = set()
 	if matrix:
+		N = row.ncols()
 		print "Matrix"
-		for ind in comb:
+		for ind in combinations[N]:
 			ret.add( sum( row[0, ind].list() ))
 		return ret
-	for ind in comb:
-		ret.add( sum([row[i] for i in ind]) )
-	return ret	
+	else:
+		N = len(row)
+		for ind in combinations[N]:
+			ret.add( sum([row[i] for i in ind]) )
+		return ret	
 	
 def f(x):
 	return x^3
@@ -58,101 +74,130 @@ Cf [0,1] = Cf[1,0] = 1
 H = M.transpose()*Cf*M
 print H.str() + "\n"
 
-A = H[:n-1, :n-1]
+A = H[:n-2, :n-2]
 
 KSet = set(K.list())
 
-setFunctions = list()
-def Sf(indexVec):
-	#print("First set function")
-	return KSet.difference( rowSpan(indexVec*A))
-setFunctions.append(Sf)
+########## Treat as CSP ########
 
+def Sf(indexVec, mat):
+	return KSet.difference( rowSpan(indexVec*mat))
 
-## Demonstrate how to work with set functions:
-#i = 0
-#S1 = setFunctions[i](CanBasis[i])
-
-##checkQAM(H)
-
-#options = dict()
-#options[i] = list(S1)
-#options[n-2] = []
-#i = 0
-#while options[n-2] == []:
-	#for xi in options[i]:
-		#i = 0
-		#used = [K(0)]
-		#H = copy(Hor)
-		#while i < n-2:
-			##print("Dealing with %s"%str(xi))
-			#used.append(xi)
-			#H[i, n-1] = H[n-1, i] = xi
-			##print("%s\n"%H.str())
-
-			#def defineSetFunc(i):
-				#def Sf(indexVec):
-					##print("Generating set for i = %d"%(i+1))
-					#return setFunctions[i](indexVec).intersection(set([s-xi for s in setFunctions[i](CanBasis[i] + indexVec)]))
-				#return Sf
-			#sf = defineSetFunc(i)
-			#setFunctions.append(sf)
-			#S2 = sf(CanBasis[i])
-			#lS2 = list(S2)
-			#options[i + 1] = lS2
-			##print(len(S2),i)
-			#newOptions = list(S2.difference(set(used)))
-			#if len( newOptions ) > 0:
-				#xi = choice(newOptions)
-			#else:
-				#print("no choices at %d"%i)
-				#break
-			#i += 1
-		##print "done"
-		#if i == n-2:
-			#print "SUCCESS"
-			#H[n-1, n-2] = H[n-2, n-1] = xi
-			#break
-
-# Treat as CSP
-
-domains = dict()
-for i in range(A.nrows()):
-	domains[i] = list(Sf(CanBasis[i]))
-	
-p = Problem()
-for i in range(A.nrows()):
-	p.addVariable(i, domains[i])
-	
-sumIndices = [ind for ind in comb if len(ind) > 1]
-
-def getConstraint(avoid):
+def getDomains(mat):
+	domains = dict()
+	N = mat.nrows()
+	for i in range(N):
+		domains[i] = list(Sf(canonicalBasis[N][i], mat))
+	return domains
+		
+def getConstraintFunc(avoid):
 	def SumNotInSet(*args):
 		return sum(args) not in avoid
 	return SumNotInSet 
 	
-for ind in sumIndices:
-	indexVec = matrix(GF(2), 1, n-1)
-	indexVec[0, ind] = 1
-	#print indexVec
-	avoidSet = list(rowSpan((indexVec*A).list()))
-	constraintFunction = getConstraint(avoidSet)
-	p.addConstraint(constraintFunction,ind)
-	print ("Sum of rows %s constraint."%str(ind))
+def	getConstraints(mat):
+	'''Takes submatrix and generates constraints such that no sum of variables might lay in the row-span of the corresponding sum of rows.'''
+	
+	N = mat.ncols()
+	sumIndices = [ind for ind in combinations[N] if len(ind) > 1]
+
+	constraintList = []
+	for ind in sumIndices:
+		indexVec = matrix(GF(2), 1, N)
+		indexVec[0, ind] = 1
+		avoidSet = list(rowSpan((indexVec*mat).list()))
+		#print indexVec, avoidSet
+		constraintFunction = getConstraintFunc(avoidSet)
+		constraintList.append((constraintFunction,ind))
+
+	return constraintList
 
 def applySolution(mat, solDict):
+	N = max(solDict.keys()) + 1
+	#print("MAX IS:%d"%N)
 	for i in solDict:
-		mat[n-1, i] = mat[i, n-1] = solDict[i]
+		mat[N, i] = mat[i, N] = solDict[i]
 		
-it = p.getSolutionIter()
-while True:
-	try:
-		sol = it.next()
-		Hmod = copy(H)
-		applySolution(Hmod,sol)
-		print ("%s\nis a solution."%Hmod.str())
-	except StopIteration:
-		print ("No more solutions.")
+def solutionPolynomial(qam):
+	C = MB*qam*MB.transpose()
+	p = R(0)
+	for i in range(1,qam.ncols()):
+		for j in range(i):
+			p+= C[i,j]*x^(2^i + 2^j)
+	return p
 	
+def iterate(it, oldMat, k, polList):
+	while True:
+		try:
+			sol = it.next()
+			Hmod = copy(oldMat)
+			applySolution(Hmod,sol)
+			print ("Found a column such that %d×%d submatrix is qam:\n%s\n"%(n-k+1, n-k+1,Hmod.str()))
+			pol = solutionPolynomial(Hmod)
+			#print Hmod[:n-k+1, :n-k+1]
+			#checkQAM(Hmod[:n-k+1, :n-k+1])
+			print( "The corresponding polynomial is %s."%str(pol))
+			
+			if k == 2:
+				print("Now looking for alternative next columns.")
+				cspWorker(Hmod, k-1, polList)
+			elif k == 1:
+				polList.append(pol)
+		except StopIteration:
+			print ("No more solutions.")
+			return
+		
+def cspWorker(mat, k, polList, domains = None):
+	A = mat[:n-k, :n-k]
+	print("Setting up problem.")
+	p = Problem()
+	print("Generating domains and adding variables.")
+	if not domains:
+		print ("No domains given...")
+		domains = getDomains(A)
+	for i in domains:
+		p.addVariable(i, domains[i])
+		
+	print("Now adding constraints.")
+	constraints = getConstraints(A)
+	for const in constraints:
+		p.addConstraint(const[0], const[1])
+	print("%d vars and %d constraints added."%(len(domains), len(constraints)))
+	print("Starting iteration.")
+	it = p.getSolutionIter()
+	iterate(it,mat, k, polList)
+	
+# Starting multicore-search
+domains = getDomains(A)
+domainList = []
+nWorkers = max(4,mp.cpu_count())
+chunks = [arr.tolist() for arr in array_split(domains[0],nWorkers)]
 
+manager = mp.Manager()
+smallMatrices = manager.list()
+fullMatrices = manager.list()
+pols = manager.list()
+for i in range(nWorkers):
+	ddict = copy(domains)
+	ddict[0] = chunks[i]
+	domainList.append(ddict)
+	
+if __name__ == "__main__" :
+	print("Setting up multicore search.")
+	workers = []
+	for dom in domainList:
+		p = mp.Process(target=cspWorker, args=(H,k,pols,dom,))
+		workers.append(p)
+		p.start()
+	while True:
+		print("(Checking workers, %d sols)"%len(pols))
+		for p in workers:
+			if p.is_alive():
+				continue
+			else:
+				p.terminate()
+				p.join()
+				workers.remove(p)
+		sleep(10)
+	
 	
