@@ -4,7 +4,6 @@ from tqdm import tqdm
 import pickle
 
 n = 10
-k = 2 if n>8 else 1# change 2 columns
 K.<w> = GF(2^n, 'w' )#,repr="log")
 R.<x> = PolynomialRing(K, 'x')
 
@@ -122,7 +121,7 @@ def differConstraint(vec):
 	for elem in vec:
 		subexpression = "Or( "
 		binary = vector(elem)
-		print (binary)
+		print (elem,binary)
 		for entry in binary:
 			if entry == 1:
 				subexpression += "~{%d},"%count
@@ -159,7 +158,9 @@ def generatePreSat(mat, filename, differ = None):
 	Kset = set(k)
 	
 	if differ:
-		expressionList.append(differConstraint(differ).format(*['x%d'%i for i in range(1, N*dim+1)]))
+		differExpr= differConstraint(differ).format(*['x%d'%i for i in range(1, N*dim+1)])
+		print differExpr
+		expressionList.append(differExpr)
 	
 	# Add domain constraints. Domains have size at most 3*2^(N-1), while the set difference has size 2^(N-1).
 	# Both constraint types are equivalent and produce same amount of clauses
@@ -185,16 +186,13 @@ def generatePreSat(mat, filename, differ = None):
 		rowSum = sum(mat[ind, :].rows()) 
 		expr = notInSetConstraint( rowSpan(rowSum) )
 		constraintExpression = expr.format(*formatting)
-		print ind
-		print constraintExpression
-		print expr
-		print "\n"
+		
 		expressionList.append(constraintExpression)
 		
-	completeExpression = "And( " + ",".join(expressionList) + " )"
+	#completeExpression = "And( " + ",".join(expressionList) + " )"
 	
 	with open(filename, "w") as f:
-		f.write(completeExpression)
+		pickle.dump(expressionList,f)
 		
 	print ("All done and saved under %s."%filename)
 	
@@ -239,8 +237,9 @@ def applySatSolution(filename, sub):
 # Change last two columns of H, should be different:
 A = H[:n-2, :n-2]
 lastCol = vector( H[:,-2].list()[:-2] )
+print lastCol
 
-generatePreSat(A, "sat%d_stage1.pre"%n, differ=lastCol)
+generatePreSat(A, "sat%d.pre"%n, differ=lastCol)
 
 		
 	
