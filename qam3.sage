@@ -1,13 +1,9 @@
-from simpleai.search import CspProblem
-from simpleai.search import backtrack, min_conflicts, MOST_CONSTRAINED_VARIABLE, LEAST_CONSTRAINING_VALUE, convert_to_binary
-import multiprocessing as mp
-from numpy import array_split
-from time import sleep
 #from sympy import var as syVar
 from sympy.logic.boolalg import to_cnf, conjuncts
 from tqdm import tqdm
+import pickle
 
-n = 7
+n = 10
 k = 2 if n>8 else 1# change 2 columns
 K.<w> = GF(2^n, 'w' )#,repr="log")
 R.<x> = PolynomialRing(K, 'x')
@@ -21,6 +17,7 @@ combinations = {
 	n-1 : Combinations(n-1).list(),
 	n : Combinations(n).list(),	# nontrivial row combinations for qam checking
 	}
+	
 M = matrix(K, n,n)
 for i in range(n):
 	for j in range(n):
@@ -73,10 +70,6 @@ Cf = matrix(K,n,n)
 Cf [0,1] = Cf[1,0] = 1
 
 H = M.transpose()*Cf*M
-print H.str() + "\n"
-
-A = H[:n-2, :n-2]
-
 KSet = set(K.list())
 
 def affineTranslations(rowVector):
@@ -120,115 +113,134 @@ def getDomains(mat):
 	for i in range(2,N):
 		domains[i] =  list(KSet.difference( rowSpan(mat.rows()[i]) ))
 	return domains
+
 		
-def getConstraintFunc(avoid):
-	def SumNotInSet(variables, values):
-		print values
-		return sum(values) not in avoid
-	return SumNotInSet 
+def differConstraint(vec):
+	'''Takes an n-1 vector of F_{2^n} elements and returns a boolean function as CNF expression in (n-1)*n variables ensuring that the binary vectors differ.'''
+	expression = "And( "
+	count = 0
+	for elem in vec:
+		subexpression = "Or( "
+		binary = vector(elem)
+		print (binary)
+		for entry in binary:
+			if entry == 1:
+				subexpression += "~{%d},"%count
+			else:
+				subexpression += "{%d},"%count
+			count += 1
+		expression += subexpression[:-1] + "),"
+	expression = expression[:-1] + ")"
+	return expression
 	
-def	getConstraints(mat):
-	'''Takes submatrix and generates constraints such that no sum of variables might lay in the row-span of the corresponding sum of rows.'''
+def notInSetConstraint(outSet):
+	expression = "And( "
+	for elem in outSet:
+		subexpression = "Or( "
+		vec = vector(elem)
+		count = 0
+		for entry in vec:
+			if entry == 1:
+				subexpression += "~{%d},"%count
+			else:
+				subexpression += "{%d},"%count
+			count += 1
+		expression += subexpression[:-1] + "),"
+	expression = expression[:-1] +")"
+	return expression
 	
-	N = mat.ncols()
+
+def generatePreSat(mat, filename, differ = None):
+	'''Takes a quadratic QAM-submatrix 'mat' and dimension/degree of galois field and generates a boolean expression wich has to be further transformed using Tseitin.'''
+	N = mat.nrows()
+	expressionList = []
+	k = mat.base_ring()
+	dim = k.degree()
+	Kset = set(k)
+	
+	if differ:
+		expressionList.append(differConstraint(differ).format(*['x%d'%i for i in range(1, N*dim+1)]))
+	
+	# Add domain constraints. Domains have size at most 3*2^(N-1), while the set difference has size 2^(N-1).
+	# Both constraint types are equivalent and produce same amount of clauses
+	for i in range(N):
+		rowSpace = rowSpan(mat.rows()[i])
+		offset = i*dim + 1
+		
+		formatting = ["x%d"%j for j in range(offset, offset+dim)]
+		expr = notInSetConstraint(rowSpace) 
+		constraintExpression = expr.format(*formatting)
+		expressionList.append(constraintExpression)
+		
 	sumIndices = [ind for ind in combinations[N] if len(ind) > 1]
-
-	constraintList = []
 	for ind in sumIndices:
-		indexVec = matrix(GF(2), 1, N)
-		indexVec[0, ind] = 1
-		avoidSet = list(rowSpan((indexVec*mat).list()))
-		#print indexVec, avoidSet
-		constraintFunction = getConstraintFunc(avoidSet)
-		constraintList.append((tuple(ind), avoidSet))
-
-	return constraintList
-	
-A = H[:n-1, :n-1]
-
-# Build sympy expressions
-## not in set constraints
-expr = []
-for i in range(n-1):
-	l = i*n + 1
-	rowSpace = rowSpan(A.rows()[i])
-	for s in rowSpace:
-		clause = "Or( "
-		sVec = vector(s)
-		k = 0
-		for j in sVec:
-			if j == 1:
-				clause += " ~x%d ,"%(l+k)
-			else:
-				clause += " x%d ,"%(l+k)
-			k += 1
-		#print clause[:-1]
-		expr.append( clause[:-1] + ")")
-				
-## in set constraints
-#print("\nIn Set\n")
-#domains = getDomains(A)
-#expr2 = "Or(" 
-#for i in domains:
-	#l = i*n
-	#dom = domains[i]
-	#for s in dom:
-		#clause = ""
-		#sVec = vector(s)
-		#k = 0
-		#for j in sVec:
-			#if j == 1:
-				#clause += "x[%d]&"%(l+k)
-			#else:
-				#clause += "x[%d]&"%(l+k)
-			#k += 1
-		#print clause
-		#expr2 += clause[:-1] + ","
-#expr2 = expr2[:-1] + ")"
-
-# sum not in set
-constraints = getConstraints(A)
-expr3 = []
-for ind,avoid in tqdm(constraints, desc="constraints"):
-	for s in tqdm(avoid):
-		sVec = vector(s)
-		k = 0
-		clause = ""
-		for j in sVec:
-			comps = [i*n+k+1 for i in ind]
-			comps = ["x%d"%i for i in comps]
-			if j == 1:
-				clause += "Not(Xor(" + ",".join(comps) + ")) |"
-			else:
-				clause += "Xor(" + ",".join(comps) + ") |"
-			k += 1
-		elems = [str(e) for e in conjuncts(to_cnf(clause[:-1]))]
-		#tqdm.write(str(elems))
-		expr3.append(elems)
-
-cnf = ""
-clausesN = 0
-for line in expr:
-	line = line.replace("Or(", "").replace(")","").replace("x","").replace("~", "-").replace(",","") +" 0\n"
-	print(line)
-	cnf += line
-	clausesN += 1
-	
-for clauses in expr3:
-	print("\nNew list of clauses.")
-	for line in clauses:
-		line = line.replace("Not(","-").replace("Or(", "").replace("x","").replace(")","").replace(",","") + " 0\n"
-		print line
-		cnf += line
-		clausesN += 1
+		formatting = ["Xor( " for i in range(dim)] # put #dim xor's into constraintFunctions  
+		# Iterate over vectors/rows to add:
+		for i in ind:
+			offset = i*dim + 1
+			for j in range(dim):
+				formatting[j] += "x%d,"%(offset+j)
+		formatting = [formatting[i][:-1] + " )" for i in range(dim)]
 		
-cnf = "p cnf %d %d"%(n*(n-1), clausesN) + "\n" + cnf 
+		rowSum = sum(mat[ind, :].rows()) 
+		expr = notInSetConstraint( rowSpan(rowSum) )
+		constraintExpression = expr.format(*formatting)
+		print ind
+		print constraintExpression
+		print expr
+		print "\n"
+		expressionList.append(constraintExpression)
+		
+	completeExpression = "And( " + ",".join(expressionList) + " )"
+	
+	with open(filename, "w") as f:
+		f.write(completeExpression)
+		
+	print ("All done and saved under %s."%filename)
+	
+def applySatSolution(filename, sub):
+	'''Reads sat result file and appends a new column to given submatrix.'''
+	N = sub.nrows()
+	k = sub.base_ring()
+	w = k.primitive_element()
+	dim = k.degree()
+	
+	with open(filename, "r") as f:
+		for line in f:
+			if line.startswith("SAT"):
+				print("Valid solution.")
+			elif line.startswith("UNSAT"):
+				print("No valid solution. Returning")
+				return
+			else:
+				solStr = line 
 
-with open("sat%d.cnf"%n ,"w") as f:
-	f.write(cnf)
-	pass
+	ints = solStr.split(" ")[:N*dim]
+	columnElems = []
 	
+	elem = K(0)
+	for i in range(len(ints)):
+		solComp = int(ints[i])
+		exp = i % dim
+		print i, exp, solComp
+		#print solComp, i
+		if solComp > 0:
+			#print("Adding %s..."%str(w^exp))
+			elem += w^exp
+		if i%dim == dim - 1:
+			print("Appending elem %s."%str(elem))
+			columnElems.append(elem)
+			elem = K(0)
 	
+	mat = sub.stack( matrix(k, columnElems) )
+	mat = mat.augment(matrix(k, columnElems + [0]).transpose())
+	return mat
+	
+# Change last two columns of H, should be different:
+A = H[:n-2, :n-2]
+lastCol = vector( H[:,-2].list()[:-2] )
+
+generatePreSat(A, "sat%d_stage1.pre"%n, differ=lastCol)
 
 		
 	
