@@ -4,37 +4,32 @@ from tqdm import tqdm
 
 def toCNF(readFile, outFile):
 	print("Opening file.")
-	newList = []
 	with open(readFile, "rb") as f:
-		expressionList = pickle.load(f)
-	auxCount = 0
-	for expression in tqdm(expressionList):
-		tqdm.write("\nMaking it pyeda compatible.")
-		expression = expr(expression)
+		expression1, expressionList = pickle.load(f)
+	
+	expression2 = expr(expression1)
+	
+	counter = 1
+	length = len(expressionList)
+	for e in expressionList:
+		print ("Reading expression %d/%d."%(counter, length))
+		e = expr(e)
+		print("Tseitining")
+		e = e.tseitin("z%d"%counter)
+		expression2 = And( expression2 , e)
+		counter += 1
 		
-		if expression.is_cnf():
-			tqdm.write("Already cnf. Proceeding.")
-			newList+= list(expression.xs)
-		else:
-			tqdm.write("Applying Tseitin transformation.")
-			transformed = expression.tseitin("z%d"%auxCount)
-			#print (transformed)
-			#print ("\n")
-			newList += list(transformed.xs)
-			tqdm.write("Done. Proceeding.")
-			auxCount += 1
+	print("Encoding")
+	lit, nvars, clauses = expression2._encode_cnf()
 	
-	print("Getting solver ready string.")
-	whole = expr(And(*newList))
-	#wholeExpr = expr(whole)
-	dimacs = expr2dimacscnf(whole)
-	cnf = (dimacs[1]).__str__()
-	#print(dimacs[0])
+	print("Generating file")
+	final = "p cnf %d %d \n"%(nvars, len(clauses))
+	for clause in tqdm(clauses):
+		final += " ".join(str(idx) for idx in clause) + " 0\n"
 	
-	print("Saving under '%s'."%outFile)
 	with open(outFile, "w") as f:
-		f.write(cnf)
-	print("Done.")
+		f.write(final)
 	
+	print("Done.")	
 	#return transformed, expression
 	
