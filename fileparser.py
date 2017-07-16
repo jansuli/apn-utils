@@ -53,6 +53,7 @@ def genMultiple(N, cnf, prefix = "res_"):
 		sol = [str(s) for s in sol]
 		with open(prefix + "%d.txt"%counter, "w") as f:
 			f.write( "SAT\n" + " ".join(sol))
+		counter += 1
 	print("Done.")
 	#return transformed, expression
 	
