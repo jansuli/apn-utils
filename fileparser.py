@@ -42,7 +42,7 @@ def genMultiple(N, cnf, prefix = "res_"):
 	
 	for sol in pycosat.itersolve(cnf):
 		print("Found a solution.")
-		if len(solutions) < N - 1:
+		if len(solutions) < N :
 			solutions.append(sol)
 		else:
 			break
