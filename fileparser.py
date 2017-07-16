@@ -1,8 +1,9 @@
 from pyeda.inter import *
 import pickle
 from tqdm import tqdm
+import pycosat
 
-def toCNF(readFile, outFile):
+def toCNF(readFile, outFile, save = True):
 	print("Opening file.")
 	with open(readFile, "rb") as f:
 		expression1, expressionList = pickle.load(f)
@@ -23,13 +24,36 @@ def toCNF(readFile, outFile):
 	
 	print("Generating file")
 	final = "p cnf %d %d \n"%(nvars, len(clauses))
-	for clause in tqdm(clauses):
-		final += " ".join(str(idx) for idx in clause) + " 0\n"
 	
-	with open(outFile, "w") as f:
-		f.write(final)
+	if save:
+		for clause in tqdm(clauses):
+			final += " ".join(str(idx) for idx in clause) + " 0\n"
 	
+		with open(outFile, "w") as f:
+			f.write(final)
+		return 
+	else:
+		# for solver below
+		cnf = [ list(c) for c in clauses ]
+		return cnf
+		
+def genMultiple(N, cnf, prefix = "res_"):
+	solutions = []
+	
+	for sol in pycosat.itersolve(cnf):
+		print("Found a solution.")
+		if len(solutions) < N - 1:
+			solutions.append(sol)
+		else:
+			break
+			
+	print("Saving...")
+	counter = 0
+	for sol in solutions:
+		with open(prefix + "%d.txt"%counter, "w") as f:
+			f.write( "SAT\n" + " ".join(sol))
 	print("Done.")
-	return
 	#return transformed, expression
+	
+
 	
