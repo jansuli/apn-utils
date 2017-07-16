@@ -50,6 +50,7 @@ def genMultiple(N, cnf, prefix = "res_"):
 	print("Saving...")
 	counter = 0
 	for sol in solutions:
+		sol = [str(s) for s in sol]
 		with open(prefix + "%d.txt"%counter, "w") as f:
 			f.write( "SAT\n" + " ".join(sol))
 	print("Done.")
