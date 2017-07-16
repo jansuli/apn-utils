@@ -8,7 +8,6 @@ def toCNF(readFile, outFile):
 		expression1, expressionList = pickle.load(f)
 	
 	expression2 = expr(expression1)
-	
 	counter = 1
 	length = len(expressionList)
 	for e in expressionList:
@@ -30,6 +29,7 @@ def toCNF(readFile, outFile):
 	with open(outFile, "w") as f:
 		f.write(final)
 	
-	print("Done.")	
+	print("Done.")
+	return
 	#return transformed, expression
 	

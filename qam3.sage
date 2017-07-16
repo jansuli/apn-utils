@@ -3,8 +3,8 @@ from sympy.logic.boolalg import to_cnf, conjuncts
 from tqdm import tqdm
 import pickle
 
-n = 10
-K.<w> = GF(2^n, 'w' )#,repr="log")
+n = 8
+K.<w> = GF(2^n, 'w' ,repr="log")
 R.<x> = PolynomialRing(K, 'x')
 
 KBasis = [w^i for i in range(n)]
@@ -146,6 +146,7 @@ def notInSetConstraint(outSet):
 			count += 1
 		expression += subexpression[:-1] + "),"
 	expression = expression[:-1] +")"
+	print ("Added %d clauses."%len(outSet))
 	return expression
 	
 
@@ -157,6 +158,8 @@ def generatePreSat(mat, filename, differ = None):
 	dim = k.degree()
 	Kset = set(k)
 	
+	print("Generating sat problem for submatrix with %d rows over field with degree %d"%(N,dim))
+	
 	if differ:
 		differExpr= differConstraint(differ).format(*['x%d'%i for i in range(1, N*dim+1)])
 		print differExpr
@@ -165,7 +168,14 @@ def generatePreSat(mat, filename, differ = None):
 	# Add domain constraints. Domains have size at most 3*2^(N-1), while the set difference has size 2^(N-1).
 	# Both constraint types are equivalent and produce same amount of clauses
 	for i in range(N):
-		rowSpace = rowSpan(mat.rows()[i])
+		if i <= 1:
+			aff = affineUnion(mat.rows()[i],i)
+			print aff
+			rowSpace = Kset.difference(aff)
+			#rowSpace = rowSpan(mat.rows()[i])
+		else:
+			rowSpace = rowSpan(mat.rows()[i])
+			print (0 in rowSpace)
 		offset = i*dim + 1
 		
 		formatting = ["x%d"%j for j in range(offset, offset+dim)]
@@ -173,6 +183,9 @@ def generatePreSat(mat, filename, differ = None):
 		constraintExpression = expr.format(*formatting)
 		expressionList.append(constraintExpression)
 		
+	expression1 = "And("+ ",".join(expressionList)+")"  # everything up till now is already in CNF and doesn't need to be transformed
+	expressionList = []
+	print expression1
 	sumIndices = [ind for ind in combinations[N] if len(ind) > 1]
 	for ind in sumIndices:
 		formatting = ["Xor( " for i in range(dim)] # put #dim xor's into constraintFunctions  
@@ -192,7 +205,7 @@ def generatePreSat(mat, filename, differ = None):
 	#completeExpression = "And( " + ",".join(expressionList) + " )"
 	
 	with open(filename, "w") as f:
-		pickle.dump(expressionList,f)
+		pickle.dump((expression1, expressionList),f)
 		
 	print ("All done and saved under %s."%filename)
 	
@@ -237,7 +250,7 @@ def applySatSolution(filename, sub):
 # Change last two columns of H, should be different:
 A = H[:n-2, :n-2]
 lastCol = vector( H[:,-2].list()[:-2] )
-print lastCol
+#print lastCol
 
 generatePreSat(A, "sat%d.pre"%n, differ=lastCol)
 
