@@ -34,7 +34,7 @@ def toCNF(readFile, outFile, save = True):
 		return 
 	else:
 		# for solver below
-		cnf = [ list(c) for c in clauses ]
+		cnf = [ c for c in clauses ]
 		return cnf
 		
 def genMultiple(N, cnf, prefix = "res_"):
