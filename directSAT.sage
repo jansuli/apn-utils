@@ -104,9 +104,9 @@ def applySatSolution(filename, sub):
 	
 def cosetRepr(space, subspace):
 	subspace = list(subspace)
-	card = 2^(log(len(space), base=2) - log(len(subspace) , base=2))
-	reps = []
-	cosetsUnion = set()
+	card = len(space)/len(subspace)
+	reps = [0]
+	cosetsUnion = set(subspace)
 	i = 0
 	v = subspace[1]
 	while len(reps) < card:
@@ -114,15 +114,16 @@ def cosetRepr(space, subspace):
 		new = []
 		if a != 0:
 			if not a+v in cosetsUnion:
+				print "found %s"%str(a)
 				new.append(a)
 				
 				for ind in Combinations(len(reps)).list():
-					new.append(sum([reps[i] for i in ind]))
+					new.append(a + sum([reps[i] for i in ind]))
 					
 				for r in new:
 					newCoset =  set([r + w for w in subspace]) 
 					cosetsUnion = cosetsUnion.union(newCoset)
-				reps = reps + [r for r in new if r not in reps]			
+				reps = list( set(reps).union(set(new)) )	
 		i += 1
 	return reps
 	
@@ -233,6 +234,10 @@ def sumNotInSet(outSet, ind):
 	#print vectorIndices
 	
 	reprTuple = cosetRepr(k, outSet)
+	print "\n-------------------------------------------------------"
+	print ind
+	print reprTuple
+	print "-------------------------------------------------------"
 	
 	lenTuple = len(ind)
 	variations = Tuples(reprTuple, lenTuple)
@@ -242,9 +247,8 @@ def sumNotInSet(outSet, ind):
 			if sum (var) == 0:
 				# sum of representatives is 0 => sum in outSet => f would evaluate to 0
 				print("not in coset product constraint")
-				print (ind)
-				print (var)
-				print ("\n")
+				#print (var)
+				#print ("\n")
 				
 				subexpression, subclauses = notInCosetProduct(var, outSet, vectorIndices)
 				expression += subexpression
