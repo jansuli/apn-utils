@@ -240,9 +240,6 @@ def sumNotInSet(outSet, ind):
 			else:
 				# sum of representatives is 0 => sum in outSet => f would evaluate to 0
 				print("not in coset product constraint")
-				print (ind)
-				print (var)
-				print ("\n")
 				
 				subexpression, subclauses = notInCosetProduct(var, outSet, vectorIndices)
 				expression += subexpression
@@ -257,6 +254,9 @@ def sumNotInSet(outSet, ind):
 				# sum of representatives is 0 => sum in outSet => f would evaluate to 0
 				print(var)
 				print("not in coset product constraint")
+				print (ind)
+				print (var)
+				print ("\n")
 				
 				subexpression, subclauses = notInCosetProduct(var, outSet, vectorIndices)
 				expression += subexpression
