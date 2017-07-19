@@ -104,19 +104,25 @@ def applySatSolution(filename, sub):
 	
 def cosetRepr(space, subspace):
 	subspace = list(subspace)
-	num = 2^(log(len(space), base=2) - log(len(subspace) , base=2))
-	reps = [K(0)]
+	card = 2^(log(len(space), base=2) - log(len(subspace) , base=2))
+	reps = set(K(0))
 	cosetsUnion = set(subspace)
 	i = 0
 	v = subspace[1]
-	while len(reps) < num:
+	while len(reps) < card:
 		a = space[i]
+		new = set()
 		if a != 0:
 			if not a+v in cosetsUnion:
-				reps.append(a)
-				newCoset =  set([a + w for w in subspace]) 
-				cosetsUnion = cosetsUnion.union(newCoset)
+				new.add(a)
 				
+				for ind in Combinations(len(reps)).list()[1:]:
+					new.add(sum([reps[i] for i in ind]))
+					
+				for r in new:
+					newCoset =  set([r + w for w in subspace]) 
+					cosetsUnion = cosetsUnion.union(newCoset)
+				reps = reps.union(new)				
 		i += 1
 	return reps
 	
