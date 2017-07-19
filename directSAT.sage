@@ -228,12 +228,15 @@ def sumNotInSet(outSet, ind):
 	
 	reprTuple = cosetRepr(k, outSet)
 	
-	variations = Tuples(reprTuple, len(ind))
+	lenTuple = len(ind)
+	variations = Tuples(reprTuple, lenTuple)
 	expression = ""
 	clauses = 0
 	for var in variations:
 		for rep in var:
-			if var.count(rep) % 2 == 1:
+			if lenTuple % 2 == 0 and var.count(rep) % 2 == 1:
+				break
+			elif lenTuple %2 == 1 and 0 not in var and var.count(rep) % 2 == 1:
 				break
 		else:
 			# sum of representatives is 0 => sum in outSet => f would evaluate to 0
