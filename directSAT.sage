@@ -224,7 +224,7 @@ def sumNotInSet(outSet, ind):
 	vectorIndices = []
 	for i in ind:
 		vectorIndices += list(range(i*n+1, i*n+n+1))
-	print vectorIndices
+	#print vectorIndices
 	
 	reprTuple = cosetRepr(k, outSet)
 	
@@ -239,8 +239,10 @@ def sumNotInSet(outSet, ind):
 					break
 			else:
 				# sum of representatives is 0 => sum in outSet => f would evaluate to 0
-				print(var)
 				print("not in coset product constraint")
+				print (ind)
+				print (var)
+				print ("\n")
 				
 				subexpression, subclauses = notInCosetProduct(var, outSet, vectorIndices)
 				expression += subexpression
