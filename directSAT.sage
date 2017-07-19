@@ -240,7 +240,6 @@ def sumNotInSet(outSet, ind):
 			else:
 				# sum of representatives is 0 => sum in outSet => f would evaluate to 0
 				print("not in coset product constraint")
-				print("not in coset product constraint")
 				print (ind)
 				print (var)
 				print ("\n")
@@ -253,10 +252,10 @@ def sumNotInSet(outSet, ind):
 			cp.remove(0)
 			for rep in cp:
 				if cp.count(rep) % 2 == 1:
+					print("Ignoring %s."%str(var))
 					break
 			else:
 				# sum of representatives is 0 => sum in outSet => f would evaluate to 0
-				print(var)
 				print("not in coset product constraint")
 				print (ind)
 				print (var)
@@ -281,7 +280,7 @@ def generateSatString(submatrix):
 		subexpression, subclauses = notInSetConstraint(rowSpace, i)
 		expression += subexpression
 		clauses += subclauses
-	if True:	
+	if False:	
 		sumIndices = [ind for ind in combinations[N] if len(ind) > 1]
 		for ind in sumIndices:
 			rowSpace = rowSpan(sum([rows[i] for i in ind]))
