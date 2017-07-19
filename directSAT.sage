@@ -201,7 +201,7 @@ def notInCosetProduct(reprTuple, subspace, vectorIndices):
 	
 	expression = ""
 	clauses = 0
-	for fieldTuple in tqdm(fieldTuples):
+	for fieldTuple in fieldTuples:
 		longVec = []
 		subexpression = ""
 		count = 0
@@ -240,6 +240,10 @@ def sumNotInSet(outSet, ind):
 			else:
 				# sum of representatives is 0 => sum in outSet => f would evaluate to 0
 				print("not in coset product constraint")
+				print("not in coset product constraint")
+				print (ind)
+				print (var)
+				print ("\n")
 				
 				subexpression, subclauses = notInCosetProduct(var, outSet, vectorIndices)
 				expression += subexpression
