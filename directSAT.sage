@@ -3,7 +3,7 @@ from sympy.logic.boolalg import to_cnf, conjuncts
 from tqdm import tqdm
 import pickle
 
-n = 5
+n = 7
 K.<w> = GF(2^n, 'w' )#,repr="log")
 k = K.list()
 KBasis = [w^i for i in range(n)]
