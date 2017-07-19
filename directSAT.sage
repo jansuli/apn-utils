@@ -280,7 +280,7 @@ def generateSatString(submatrix):
 		subexpression, subclauses = notInSetConstraint(rowSpace, i)
 		expression += subexpression
 		clauses += subclauses
-	if False:	
+	if True:	
 		sumIndices = [ind for ind in combinations[N] if len(ind) > 1]
 		for ind in sumIndices:
 			rowSpace = rowSpan(sum([rows[i] for i in ind]))
