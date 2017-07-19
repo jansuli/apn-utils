@@ -233,28 +233,7 @@ def sumNotInSet(outSet, ind):
 	expression = ""
 	clauses = 0
 	for var in variations:
-		if lenTuple % 2 == 0:
-			for rep in var:
-				if var.count(rep) % 2 == 1:
-					break
-			else:
-				# sum of representatives is 0 => sum in outSet => f would evaluate to 0
-				print("not in coset product constraint")
-				print (ind)
-				print (var)
-				print ("\n")
-				
-				subexpression, subclauses = notInCosetProduct(var, outSet, vectorIndices)
-				expression += subexpression
-				clauses += subclauses
-		elif lenTuple % 2 == 1 and 0 in var:
-			cp = var[:]
-			cp.remove(0)
-			for rep in cp:
-				if cp.count(rep) % 2 == 1:
-					print("Ignoring %s."%str(var))
-					break
-			else:
+			if sum (var) == 0:
 				# sum of representatives is 0 => sum in outSet => f would evaluate to 0
 				print("not in coset product constraint")
 				print (ind)
