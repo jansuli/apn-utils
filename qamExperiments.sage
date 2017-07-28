@@ -75,7 +75,7 @@ Cf [0,1] = Cf[1,0] = 1
 H = M.transpose()*Cf*M
 print H.str() + "\n"
 
-A = H[:n-1, :n-1]
+A = H[:n-k, :n-k]
 
 KSet = set(K.list())
 
