@@ -3,7 +3,7 @@ import multiprocessing as mp
 from numpy import array_split
 from time import sleep
 
-n = 7
+n = 8
 k = 2 # change 2 columns
 K.<w> = GF(2^n, 'w' ,repr="log")
 Kset = set(K.list())
