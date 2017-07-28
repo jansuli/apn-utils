@@ -154,8 +154,6 @@ def nextComponent(columnTilNow, setFn):
 				return newCol
 	
 def setFn( indexTuple):
-	if len(indexTuple) == 1 and not set(indexTuple).issubset(set([0,1,2])):
-		return set(H[ind, -1].list())
 	return S[indexTuple]
 	
 col = nextComponent(newCol, setFn)
