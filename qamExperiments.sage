@@ -3,9 +3,10 @@ import multiprocessing as mp
 from numpy import array_split
 from time import sleep
 
-n = 10
+n = 7
 k = 2 # change 2 columns
 K.<w> = GF(2^n, 'w' ,repr="log")
+Kset = set(K.list())
 R.<x> = PolynomialRing(K, 'x')
 
 KBasis = [w^i for i in range(n)]
@@ -16,11 +17,10 @@ canonicalBasis = {
 	n-2 : VectorSpace(GF(2), n-2).basis(),
 	}
 
-combinations = {
-	n-2 : Combinations(n-2).list(),
-	n-1 : Combinations(n-1).list(),
-	n : Combinations(n).list(),	# nontrivial row combinations for qam checking
-	}
+combinations = dict()
+
+for i in range(n+1):
+	combinations[i] = Combinations(i).list()
 
 M = matrix(K, n,n)
 for i in range(n):
@@ -61,10 +61,11 @@ def rowSpan(row, matrix = False):
 		return ret
 	else:
 		N = len(row)
+		#print N
 		for ind in combinations[N]:
-			ret.add( sum([row[i] for i in ind]) )
+			#print ind
+			ret.add( K(sum([row[i] for i in ind])) )
 		return ret	
-	
 def f(x):
 	return x^3
 	
@@ -74,7 +75,7 @@ Cf [0,1] = Cf[1,0] = 1
 H = M.transpose()*Cf*M
 print H.str() + "\n"
 
-A = H[:n-2, :n-2]
+A = H[:n-1, :n-1]
 
 KSet = set(K.list())
 
@@ -125,47 +126,36 @@ def solutionPolynomial(qam):
 		for j in range(i):
 			p+= C[i,j]*x^(2^i + 2^j)
 	return p
-	
-def iterate(it, oldMat, k, polList):
-	while True:
-		try:
-			sol = it.next()
-			Hmod = copy(oldMat)
-			applySolution(Hmod,sol)
-			print ("Found a column such that %d×%d submatrix is qam:\n%s\n"%(n-k+1, n-k+1,Hmod.str()))
-			pol = solutionPolynomial(Hmod)
-			#print Hmod[:n-k+1, :n-k+1]
-			#checkQAM(Hmod[:n-k+1, :n-k+1])
-			print( "The corresponding polynomial is %s."%str(pol))
-			
-			if k == 2:
-				print("Now looking for alternative next columns.")
-				cspWorker(Hmod, k-1, polList)
-			elif k == 1:
-				polList.append(pol)
-		except StopIteration:
-			print ("No more solutions.")
-			return
-		
-def cspWorker(mat, k, polList, domains = None):
-	A = mat[:n-k, :n-k]
-	print("Setting up problem.")
-	p = Problem()
-	print("Generating domains and adding variables.")
-	if not domains:
-		print ("No domains given...")
-		domains = getDomains(A)
-	for i in domains:
-		p.addVariable(i, domains[i])
-		
-	print("Now adding constraints.")
-	constraints = getConstraints(A)
-	for const in constraints:
-		p.addConstraint(const[0], const[1])
-	print("%d vars and %d constraints added."%(len(domains), len(constraints)))
-	print("Starting iteration.")
-	it = p.getSolutionIter()
-	iterate(it,mat, k, polList)
-	
 
+newCol = matrix(K, n-1, 1)
+S = dict()
+for ind in combinations[n-1]:
+	if len(ind) > 0:
+		S[tuple(ind)] = Kset.difference(rowSpan( sum(A[ind, :].rows())))
+		
+def getSetFn(oldFn, xi, pos):
+	def newSetFn(indexTuple):
+		return oldFn(indexTuple).intersection(set([xi + v for v in oldFn(tuple([pos]+list(indexTuple)))]))
+	return newSetFn	
+		
+def nextComponent(columnTilNow, setFn):
+	newCol = copy(columnTilNow)
+	pos = n - (1+newCol.list().count(0))
+	domain = setFn((pos,))
+	if len(domain) > 0:
+		print("At %d domain has length %d."%(pos, len(domain)))
+		for xi in domain:
+			newCol[pos] = xi			
+			if pos < A.nrows()-1:
+				newSetFn = getSetFn(setFn, xi, pos)
+				next = nextComponent(newCol,newSetFn)
+				if next != None: return next
+			else:
+				return newCol
 	
+def setFn( indexTuple):
+	if len(indexTuple) == 1 and not set(indexTuple).issubset(set([0,1,2])):
+		return set(H[ind, -1].list())
+	return S[indexTuple]
+	
+col = nextComponent(newCol, setFn)

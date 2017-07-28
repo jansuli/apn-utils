@@ -247,6 +247,14 @@ def applySatSolution(filename, sub):
 	mat = mat.augment(matrix(k, columnElems + [0]).transpose())
 	return mat
 	
+def genMultiple(prefix, maxN):
+	for i in range(maxN + 1):
+		M = applySatSolution(prefix + "%d.txt"%i, A)
+		lastCol = M[:, -1].list()
+		generatePreSat(M,prefix + "%d.pre"%i, differ = lastCol)
+	print("Saved all")
+		
+	
 # Change last two columns of H, should be different:
 A = H[:n-2, :n-2]
 lastCol = vector( H[:,-2].list()[:-2] )
