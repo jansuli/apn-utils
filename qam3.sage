@@ -256,11 +256,11 @@ def genMultiple(prefix, maxN):
 		
 	
 # Change last two columns of H, should be different:
-A = H[:n-2, :n-2]
+A = H[:n-1, :n-1]
 lastCol = vector( H[:,-2].list()[:-2] )
 #print lastCol
 
-generatePreSat(A, "sat%d.pre"%n, differ=lastCol)
+generatePreSat(A, "sat%d.pre"%n)#, differ=lastCol)
 
 		
 	
