@@ -1,36 +1,21 @@
-from constraint import *
-import multiprocessing as mp
 from numpy import array_split
 from time import sleep
 
-n = 8
-k = 2 # change 2 columns
+n = 7								# dimension of K as F2-vector space
+k = 1 								# number of columns to change
 K.<w> = GF(2^n, 'w' ,repr="log")
 Kset = set(K.list())
-R.<x> = PolynomialRing(K, 'x')
+R.<x> = PolynomialRing(K, 'x')		# needed for turning QAM into polynomial
 
 KBasis = [w^i for i in range(n)]
 DualBasis = K.dual_basis()
 
-canonicalBasis = {
-	n-1 : VectorSpace(GF(2), n-1).basis(),
-	n-2 : VectorSpace(GF(2), n-2).basis(),
-	}
 
 combinations = dict()
 
 for i in range(n+1):
 	combinations[i] = Combinations(i).list()
 
-M = matrix(K, n,n)
-for i in range(n):
-	for j in range(n):
-		M[i,j] = KBasis[j]^(2^i)
-		
-MB = matrix(K,n,n)
-for i in range(n):
-	for j in range(n):
-		MB[i,j] = DualBasis[j]^(2^i)
 		
 def checkRowRank(row):
 	testMatrix = matrix( GF(2), n,0)
@@ -51,26 +36,56 @@ def checkQAM(mat):
 		print ("QAM")
 		return True
 
-def rowSpan(row, matrix = False):
+def rowSpan(row):
 	ret = set()
-	if matrix:
-		N = row.ncols()
-		print "Matrix"
-		for ind in combinations[N]:
-			ret.add( sum( row[0, ind].list() ))
-		return ret
-	else:
-		N = len(row)
-		#print N
-		for ind in combinations[N]:
-			#print ind
-			ret.add( K(sum([row[i] for i in ind])) )
-		return ret	
-def f(x):
-	return x^3
+	N = len(row)
+	for ind in combinations[N]:
+		#print ind
+		ret.add( K(sum([row[i] for i in ind])) )
+	return ret	
 	
+def affineTranslations(rowVector):
+	V = rowSpan(rowVector)
+	domain = KSet.difference(V)
+	translations = set()
+	build = set()
+	for a in domain:
+		v = V.pop()
+		if a+v not in build:
+			V.add(v)
+			coset = set( [a+v for v in V] )
+			build = build.union(coset)
+			translations.add(a)	
+		else:
+			V.add(v)	
+			
+	return translations
+	
+def affineUnion(rowVector, offset = 0):
+	print ("affine union")
+	translations = affineTranslations(rowVector)
+	
+	if offset == 0:
+		return translations
+	else:
+		ret = set()
+		V = rowSpan( rowVector[offset:] )
+		for a in translations:
+			ret = ret.union( set([a + v for v in V]))
+		return ret
+
 Cf = matrix(K,n,n)
 Cf [0,1] = Cf[1,0] = 1
+
+M = matrix(K, n,n)
+for i in range(n):
+	for j in range(n):
+		M[i,j] = KBasis[j]^(2^i)
+		
+MB = matrix(K,n,n)
+for i in range(n):
+	for j in range(n):
+		MB[i,j] = DualBasis[j]^(2^i)
 
 H = M.transpose()*Cf*M
 print H.str() + "\n"
@@ -131,12 +146,20 @@ newCol = matrix(K, n-1, 1)
 S = dict()
 for ind in combinations[n-1]:
 	if len(ind) > 0:
-		S[tuple(ind)] = Kset.difference(rowSpan( sum(A[ind, :].rows())))
+		if ind == [0]:
+			S[tuple(ind)] = affineUnion(A[ind, :].rows()[0])
+		elif ind == [1]:
+			S[tuple(ind)] = affineUnion(A[ind, :].rows()[0], 1)
+		else:
+			S[tuple(ind)] = Kset.difference(rowSpan( sum(A[ind, :].rows())))
 		
 def getSetFn(oldFn, xi, pos):
 	def newSetFn(indexTuple):
 		return oldFn(indexTuple).intersection(set([xi + v for v in oldFn(tuple([pos]+list(indexTuple)))]))
 	return newSetFn	
+	
+def setFn( indexTuple):
+	return S[indexTuple]
 		
 def nextComponent(columnTilNow, setFn):
 	newCol = copy(columnTilNow)
@@ -148,12 +171,9 @@ def nextComponent(columnTilNow, setFn):
 			newCol[pos] = xi			
 			if pos < A.nrows()-1:
 				newSetFn = getSetFn(setFn, xi, pos)
-				next = nextComponent(newCol,newSetFn)
-				if next != None: return next
+				for col in nextComponent(newCol, newSetFn):
+					yield col 
 			else:
-				return newCol
-	
-def setFn( indexTuple):
-	return S[indexTuple]
-	
-col = nextComponent(newCol, setFn)
+				yield newCol
+
+solutionIterator = nextComponent(newCol, setFn)
