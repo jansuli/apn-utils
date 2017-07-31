@@ -2,7 +2,7 @@ from numpy import array_split
 from time import sleep
 
 n = 8								# dimension of K as F2-vector space
-k = 1 								# number of columns to change
+k = 2 								# number of columns to change
 K.<w> = GF(2^n, 'w' ,repr="log")
 Kset = set(K.list())
 R.<x> = PolynomialRing(K, 'x')		# needed for turning QAM into polynomial
@@ -142,38 +142,43 @@ def solutionPolynomial(qam):
 			p+= C[i,j]*x^(2^i + 2^j)
 	return p
 
-newCol = matrix(K, n-1, 1)
-S = dict()
-for ind in combinations[n-1]:
-	if len(ind) > 0:
-		if ind == [0]:
-			S[tuple(ind)] = affineUnion(A[ind, :].rows()[0])
-		elif ind == [1]:
-			S[tuple(ind)] = affineUnion(A[ind, :].rows()[0], 1)
-		else:
-			S[tuple(ind)] = Kset.difference(rowSpan( sum(A[ind, :].rows())))
-		
-def getSetFn(oldFn, xi, pos):
-	def newSetFn(indexTuple):
-		return oldFn(indexTuple).intersection(set([xi + v for v in oldFn(tuple([pos]+list(indexTuple)))]))
-	return newSetFn	
-	
-def setFn( indexTuple):
-	return S[indexTuple]
-		
-def nextComponent(columnTilNow, setFn):
-	newCol = copy(columnTilNow)
-	pos = n - (1+newCol.list().count(0))
-	domain = setFn((pos,))
-	if len(domain) > 0:
-		print("At %d domain has length %d."%(pos, len(domain)))
-		for xi in domain:
-			newCol[pos] = xi			
-			if pos < A.nrows()-1:
-				newSetFn = getSetFn(setFn, xi, pos)
-				for col in nextComponent(newCol, newSetFn):
-					yield col 
+def problemIterator(submatrix):
+	B = submatrix
+	N = B.nrows()
+	newCol = matrix(K, N, 1)
+	S = dict()
+	for ind in combinations[N]:
+		if len(ind) > 0:
+			if ind == [0]:
+				S[tuple(ind)] = affineUnion(B[ind, :].rows()[0])
+			elif ind == [1]:
+				S[tuple(ind)] = affineUnion(B[ind, :].rows()[0], 1)
 			else:
-				yield newCol
+				S[tuple(ind)] = Kset.difference(rowSpan( sum(B[ind, :].rows())))
+			
+	def getSetFn(oldFn, xi, pos):
+		def newSetFn(indexTuple):
+			return oldFn(indexTuple).intersection(set([xi + v for v in oldFn(tuple([pos]+list(indexTuple)))]))
+		return newSetFn	
+		
+	def setFn( indexTuple):
+		return S[indexTuple]
+			
+	def nextComponent(columnTilNow, setFn):
+		newCol = copy(columnTilNow)
+		pos = N - newCol.list().count(0)
+		domain = setFn((pos,))
+		if len(domain) > 0:
+			print("At %d domain has length %d."%(pos, len(domain)))
+			for xi in domain:
+				newCol[pos] = xi			
+				if pos < N-1:
+					newSetFn = getSetFn(setFn, xi, pos)
+					for col in nextComponent(newCol, newSetFn):
+						yield col 
+				else:
+					yield newCol
 
-solutionIterator = nextComponent(newCol, setFn)
+	return nextComponent(newCol, setFn)
+	
+sols = problemIterator(A)
