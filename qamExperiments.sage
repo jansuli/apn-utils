@@ -1,7 +1,7 @@
 from numpy import array_split
 from time import sleep
 
-n = 8								# dimension of K as F2-vector space
+n = 10								# dimension of K as F2-vector space
 k = 2 								# number of columns to change
 K.<w> = GF(2^n, 'w' ,repr="log")
 Kset = set(K.list())
