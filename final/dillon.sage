@@ -1,11 +1,26 @@
-n = 6
+n = 3
 
 # Set up fields and vector spaces
 F2 = GF(2)
 V = VectorSpace(F2, n)
-VBasis = V.basis()
-K.<w> = GF(2^n, 'w') 	# w as primitive Element
+VBasis = V.basis()					# column options for L in row echelon
+K.<w> = GF(2^n, 'w', repr="log") 				# w as primitive Element
+KList = K.list()					# for comfortable indexing
 CodeSpace = VectorSpace(F2, 2^n-1)
+R.<z> = PolynomialRing(K, 'z')		# needed for Lagrange-Interpolation, thus for actually printing polynomials (in z)
+
+def lagrangeInterpolation(func):
+    poly = R(0)
+    for i in range(2^n):
+        ai = KList[i]
+        bi = func(ai)
+        prod = R(1)
+        for k in range(2^n):
+            if k != i:
+                ak = KList[k]
+                prod = prod* ((z-ak)/(ai-ak))
+        poly = poly + bi*prod
+    return poly
 
 # Test kim function 
 def f(x):
@@ -40,7 +55,7 @@ zeta = dict()
 for i in range(2*n + 1):
 	zeta[i] = list()
 
-Hext = H.augment( matrix(F2, [0 for i in range(2*n)]).transpose() )
+Hext = matrix(F2, [0 for i in range(2*n)]).transpose().augment( H ) 	# H with added zero column
 for x in Hext.columns():
 	for y in Hext.columns():
 		if x[:n] != y[:n]:
@@ -56,11 +71,10 @@ for x in Hext.columns():
 		
 ## Find all simplex sub codes 	
 solutions = list()
-
+print("Looking for simplex-sub-codes.")
 def nextColumn(mat):
 	j = mat.ncols()	+ 1		# column to construct, j as explained in thesis
 	r = mat.rank()
-	print("Trying to augment\n%s\n"%mat.str())
 	# to get row reduced echelon form we may take any vector with number of trailing zeros greater than n - r and the (r+1)st basis vector
 	options = [] if r == n else [ VBasis[r] ]
 	for i in range(n-r, n+1):
@@ -80,7 +94,7 @@ def nextColumn(mat):
 			if j <= 2*n - 1:
 				nextColumn(testMatrix)
 			else:
-				print("Solution:\n%s"%testMatrix.str())
+				print("Solution:\n%s\n"%testMatrix.str())
 				solutions.append(testMatrix)
 			
 startMatrix = matrix(F2, n, 0)
@@ -88,6 +102,7 @@ nextColumn(startMatrix)
 
 ## Search disjunkt spaces
 pairs = list()
+print("Found %d simplex-sub-codes. Now checking %d combinations for disjoint pairs."%(len(solutions), binomial(len(solutions),2))) 
 for pair in Combinations(solutions, 2):
 	L1 = pair[0]
 	L2 = pair[1]
@@ -96,3 +111,27 @@ for pair in Combinations(solutions, 2):
 	
 	if C1.intersection(C2).dimension() == 0:
 		pairs.append(pair)
+		
+## If we found at least one disjoint pair, print the first apn-permutation
+if len(pairs) > 0:
+	print("We have %d disjoint pairs. The first one leads to the following APN-permutation:"%(len(pairs)))
+	L1, L2 = pairs[0]
+	H1 = L1 * Hext
+	H2 = L2 * Hext
+	
+	def pi2(x):
+		pos = KList.index(x)
+		resultVector = H2.columns()[pos]
+		return K(resultVector)
+		
+	def pi1Inv(x):
+		vec = vector(x)
+		pos = H1.columns().index(vec)
+		return KList[pos]
+		
+	def g(x):
+		return pi2( pi1Inv(x) )
+		
+	gPoly = lagrangeInterpolation(g)
+	print("g(x) = "+str(gPoly))
+	
