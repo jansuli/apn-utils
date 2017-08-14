@@ -11,7 +11,7 @@ CodeSpace = VectorSpace(F2, 2^n-1)
 def f(x):
 	return x^3 + x^10 + w* x^24
 	
-# Build generator matrix of dual Code
+# Build generator matrix H of dual Code
 H = matrix(F2, 2*n, 0)
 for x in K.list()[1:]:
 	top = vector(x).list()
@@ -52,7 +52,7 @@ for x in Hext.columns():
 				trailingZeros = cList.index(1)
 			else:
 				trailingZeros = 2*n
-			zeta[trailingZeros].append(matrix(c).transpose())
+			zeta[trailingZeros].append(c)#matrix(c).transpose())		# store as transposed matrix already to speed up search later on
 		
 ## Find all simplex sub codes 	
 solutions = list()
@@ -60,6 +60,7 @@ solutions = list()
 def nextColumn(mat):
 	j = mat.ncols()	+ 1		# column to construct, j as explained in thesis
 	r = mat.rank()
+	print("Trying to augment\n%s\n"%mat.str())
 	# to get row reduced echelon form we may take any vector with number of trailing zeros greater than n - r and the (r+1)st basis vector
 	options = [] if r == n else [ VBasis[r] ]
 	for i in range(n-r, n+1):
@@ -68,11 +69,10 @@ def nextColumn(mat):
 	# test against all vectors in Σ with number of trailing zeros at least 2*n - j
 	testVectors = []
 	for i in range(2*n-j, 2*n+1):
-		testVectors += [c[:j, 0] for c in zeta[i]]
+		testVectors += [c[:j] for c in zeta[i]]
 	
 	for option in options:
 		testMatrix = mat.augment(option)
-		print("Testing \n%s"%(testMatrix.str()))
 		for c in testVectors:
 			if testMatrix * c == 0:
 				break
