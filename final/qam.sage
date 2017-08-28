@@ -95,11 +95,11 @@ def benchmarkRoutine(n):
 	def setUpProblems():
 		p = Problem()
 
-		# add variables and domains
+		# Add variables and domains
 		for i in range(n-1):
 			p.addVariable(i, list(S(tuple([i]))))
 
-		# add constraints
+		# Add constraints
 		for indices in sumIndices:
 			def getConstraintFunc(ind):
 				def constraint(*args):
