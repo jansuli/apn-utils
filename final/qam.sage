@@ -95,11 +95,11 @@ def benchmarkRoutine(n):
 	def setUpProblems():
 		p = Problem()
 
-		# add variables and domains
+		# Add variables and domains
 		for i in range(n-1):
-			p.addVariable(i, list(S(tuple([i]))))
+			p.addVariable(i, (i,))
 
-		# add constraints
+		# Add constraints
 		for indices in sumIndices:
 			def getConstraintFunc(ind):
 				def constraint(*args):
@@ -110,7 +110,7 @@ def benchmarkRoutine(n):
 			
 		############ Set up CSP using simpleai ##################
 		variables = list(range(n-1))
-		domains = [list(S(tuple([i]))) for i in range(n-1)]
+		domains = [(i,) for i in range(n-1)]
 
 		constraints = list()
 		for indices in sumIndices:
