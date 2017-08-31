@@ -2,11 +2,11 @@ from multiprocessing import cpu_count, Process, Manager, Event
 from numpy import array_split,array
 import os
 
-n = 7
+n = 8
 K.<w> = GF(2^n, 'w',repr="log")
 KSet = set(K.list())
 
-nWorkers = cpu_count()
+nWorkers = max([4,cpu_count()])
 
 # determine combination indices beforehand to save time later on
 combinations = {
@@ -193,79 +193,70 @@ def finalSearchWorker(startMatrix, domainFunc):
 		print ("Process %d found %s."%(os.getpid(), str(solution)))
 		
 ### Partition search space
-A2 = H[:n-2, :n-2]
-S = getOriginalSetFunction(A2)
+def partitionDomainFunc(originalSetFunc, nProcesses):
+	Sf = originalSetFunc
+	S0 = list(Sf((0,)))
+	S1 = list(Sf((1,)))
 
-S0 = list(S((0,)))
-S1 = list(S((1,)))
-
-adaptedSetFunctions = []
-if len(S0)/nWorkers >= 1:
-	# more (or equally as many) options than workers
-	S0parts = [set(arr) for arr in array_split(S0, nWorkers)]
-	print("For %d workers splitting only S0 in %d parts."%(nWorkers, nWorkers))	
-	
-	def getNewSetFunc(part):
-		def newFunc(indices):
-			if indices == (0,):
-				return part
-			else:
-				return S(indices)
-		return newFunc
+	adaptedSetFuncs = []
+	if len(S0)/nWorkers >= 1:
+		# more (or equally as many) options than workers
+		S0parts = [set(arr) for arr in array_split(S0, nProcesses)]	
 		
-	for part in S0parts:
-		adaptedSetFunctions.append(getNewSetFunc(part))
-		
-else:
-	def getNewSetFunc(part0, part1):
+		def getNewSetFunc(part):
 			def newFunc(indices):
 				if indices == (0,):
-					return part0
-				elif indices == (1,):
-					return part1
+					return part
 				else:
-					return S(indices)
+					return Sf(indices)
 			return newFunc
 			
-	r = nWorkers % len(S0)
-	if r == 0:
-		m = nWorkers / len(S0)
-		S0parts = [set([elem]) for elem in S0]
-		S1parts = [set(arr) for arr in array_split(S0, m)]
-		print("For %d splitting S0 in %d and S1 in %d parts."%(nWorkers, nWorkers, secondSplit))
-		
-		for part0 in S0parts:
-			for part1 in S1parts:
-				adaptedSetFunctions.append(getNewSetFunc(part0, part1))
-	
-	else:
-		m = int(floor(nWorkers/len(S0)))
-		print("For %d Workers we get:"%nWorkers)
-		print("%d processes for which S1 is split into %d parts …"%((len(S0)-r), m))
-		S0 = list(S0)
-		for elem in S0[r:]:
-			for arr in array_split(S1,m):
-				adaptedSetFunctions.append(getNewSetFunc(set([elem]), set(arr)))	
-		print("… and %d processes for which S1 is split into %d parts."%(r, (m+1)))
-		for elem in S0[:r]:
-			for arr in array_split(S1, m+1):
-				adaptedSetFunctions.append(getNewSetFunc(set([elem]), set(arr)))
-				
-print("S0 is now split into:")
-for fx in adaptedSetFunctions:
-	print( fx((0,)) )
-	
-print("S1 is now split into:")
-for fx in adaptedSetFunctions: print( fx((1,)) )
+		for part in S0parts:
+			adaptedSetFuncs.append(getNewSetFunc(part))
 			
-		
-m = Manager()
-solutions = m.list()
-workers = []
+	else:
+		def getNewSetFunc(part0, part1):
+				def newFunc(indices):
+					if indices == (0,):
+						return part0
+					elif indices == (1,):
+						return part1
+					else:
+						return Sf(indices)
+				return newFunc
+				
+		r = nProcesses % len(S0)
+		if r == 0:
+			m = nProcesses / len(S0)
+			S0parts = [set([elem]) for elem in S0]
+			S1parts = [set(arr) for arr in array_split(S0, m)]
+						
+			for part0 in S0parts:
+				for part1 in S1parts:
+					adaptedSetFuncs.append(getNewSetFunc(part0, part1))
+		else:
+			m = int(floor(nProcesses/len(S0)))
+			S0 = list(S0)
+			for elem in S0[r:]:
+				for arr in array_split(S1,m):
+					adaptedSetFuncs.append(getNewSetFunc(set([elem]), set(arr)))	
+			for elem in S0[:r]:
+				for arr in array_split(S1, m+1):
+					adaptedSetFuncs.append(getNewSetFunc(set([elem]), set(arr)))
+					
+	return adaptedSetFuncs
+	
 
 if __name__ == "__main__":
 	
 	## Find nWorkers new subQAMs
+	A2 = H[:n-2, :n-2]
+	S = getOriginalSetFunction(A2)
+	adaptedSetFunctions = partitionDomainFunc(S, nWorkers)
+	
+	m = Manager()
+	solutions = m.list()
+	workers = []
 	quitEv = Event()
 	done = Event()
 	maxSols = 10*nWorkers
@@ -289,13 +280,16 @@ if __name__ == "__main__":
 		print("%s\n"%str(B))
 		newQAMSubs.append(B)
 		
-	## 
+	# Work on the newly found subproblems 
 	workers = []
-	for i in range(nWorkers):
+	nProblems = nWorkers/4		# supposing nWorkers is divisible by 4 such that we can assing 4 cores to each subproblem
+	for i in range(nProblems):
 		sub = choice(newQAMSubs)
 		newQAMSubs.remove(sub)
 		print len(newQAMSubs)
 		print("Starting work on \n%s."%str(sub))
-		p = Process(target = finalSearchWorker, args = (sub, getOriginalSetFunction(sub)) )
-		workers.append(p)
-		p.start()
+		newDomainFuncs = partitionDomainFunc(getOriginalSetFunction(sub), 4)
+		for fx in newDomainFuncs:
+			p = Process(target = finalSearchWorker, args = (sub, fx) )
+			workers.append(p)
+			p.start()
