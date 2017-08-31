@@ -1,7 +1,8 @@
-from multiprocessing import cpu_count, Process, Manager
+from multiprocessing import cpu_count, Process, Manager, Event
 from numpy import array_split,array
+import os
 
-n = 9
+n = 7
 K.<w> = GF(2^n, 'w',repr="log")
 KSet = set(K.list())
 
@@ -31,13 +32,32 @@ def rowSpan(rowVector):
 	'''Takes a row vector and outputs the subspace spaned by its elements as a set.'''
 	
 	N = len(rowVector)
-	print N
 	span = set()
 	for ind in combinations[N]:
 		newElem = sum([rowVector[i] for i in ind])
 		span.add( newElem )
 	return span
 	
+def checkRowRank(row):
+	testMatrix = matrix( GF(2), n,0)
+	for i in range(row.ncols()):
+		testMatrix = testMatrix.augment(matrix(vector(row[0,i])).transpose())
+	#print testMatrix.str()
+	return testMatrix.rank()
+		
+		
+def checkQAM(mat):
+	N = mat.ncols()
+	for ind in combinations[N][1:]:		
+		testGenerator = matrix(sum(mat[ind,:]))
+		#print testGenerator
+		if checkRowRank(testGenerator) != N-1:
+			print("no qam caus of sum of %s"%str(ind))
+			return False
+	else:
+		print ("QAM")
+		return True
+		
 def cosetRepr(rowVector):
 	'''Takes a row vector and returns a set of representative elements of cosets translating the row space.'''
 	 
@@ -62,17 +82,12 @@ def cosetRepr(rowVector):
 def getOriginalSetFunction(startMatrix):
 	A = startMatrix
 	# search space reduction
-	print("First position.")
 	S0 = cosetRepr(A.rows()[0])
-	print S0
 	S1 = set()
-	print("Second position.")
 	Vred = rowSpan(A.rows()[1][1:])
 	for v in cosetRepr(A.rows()[1]):
-		print("Repr %s."%str(v))
 		S1 = S1.union(set( v + a for a in Vred))
 
-	print("Defininig")
 	def S(indices):
 		if len(indices) == 1 :
 			index = indices[0]
@@ -85,7 +100,6 @@ def getOriginalSetFunction(startMatrix):
 		else:
 			return KSet.difference( rowSpan( sum(A[indices, :]) ) )
 			
-	print("Saving in dict.")
 	# Possibly speed it up during search
 	returnDict = dict()
 	Indices = [ind for ind in combinations[A.nrows()] if len(ind) > 0]	
@@ -93,7 +107,6 @@ def getOriginalSetFunction(startMatrix):
 	for ind in Indices:
 		returnDict[tuple(ind)] = S(ind)
 
-	print("Done.")
 	def S(indices):
 		return returnDict[indices]
 		
@@ -107,8 +120,10 @@ def getSetFn(oldFn, xi, pos):
 		return oldFn(indices).intersection(set([xi + v for v in oldFn(tuple([pos])+indices)]))
 	return newSetFn
 	
-def nextAssignement(variables, assigned, domains, domainFunc, nRows):
+def nextAssignement(variables, assigned, domains, domainFunc, nRows, verbosity = False):
 	unassigned = [v for v in variables if v not in assigned]
+
+	if verbosity: print("Assigned: %s\nUnassigned: %s"%(str(assigned),str(unassigned)))
 
 	if len(assigned) < nRows-1:
 	# We still need to assign at least one variable
@@ -118,6 +133,8 @@ def nextAssignement(variables, assigned, domains, domainFunc, nRows):
 		
 		# Try to assign values to unassigned variables
 		for var in unassigned:
+			
+			if verbosity: print("Testing variable %d."%var)
 			unassignedLeft = [unVar for unVar in unassigned if unVar != var]
 			for val in domains[var]:
 				
@@ -134,7 +151,7 @@ def nextAssignement(variables, assigned, domains, domainFunc, nRows):
 					# Forwardcheck succeeded! Recursion
 					assignment = copy(assigned)
 					assignment[var] = val 
-					for s in  nextAssignement(variables, assignment, newDomainDict, domainFn, nRows):
+					for s in  nextAssignement(variables, assignment, newDomainDict, domainFn, nRows, verbosity):
 						yield s
 	else:
 		# Only one unassigned variable with non-empty domain (ensured beforhand by FC)
@@ -144,20 +161,36 @@ def nextAssignement(variables, assigned, domains, domainFunc, nRows):
 			assignment[var] = val
 			yield assignment
 
-def searchWorker(solutionList, startMatrix, adaptedDomainFunc):
+def preSearchWorker(solutionList, startMatrix, adaptedDomainFunc, done, quitEv, upperBound):
+	print("Process %d starting work."%os.getpid())
 	assignment = dict()
 	variables = set(range(startMatrix.nrows()))
 	domains = dict()
 	for v in variables:
 		domains[v] = adaptedDomainFunc( (v,) )
-		
-	print variables,domains
 
 	sol = nextAssignement(variables, assignment, domains, adaptedDomainFunc, startMatrix.nrows())
 	
-	while True: print sol.next()
-	#while len(solutionList) < nWorkers:
-		#solutionList.append(sol.next())
+	while not done.is_set():
+		solution = sol.next()
+		print("Process %d found solution: %s."%(os.getpid(), str(solution)))
+		if len(solutionList) < upperBound: solutionList.append(solution)
+		if len(solutionList) >= upperBound:
+			quitEv.set()
+			break
+				
+def finalSearchWorker(startMatrix, domainFunc):
+	print("Process %d looks for final QAM."%os.getpid())
+	assignment = dict()
+	variables = set(range(startMatrix.nrows()))
+	domains = dict()
+	for v in variables:
+		domains[v] = domainFunc( (v,) )
+
+	sol = nextAssignement(variables, assignment, domains, domainFunc, startMatrix.nrows(), verbosity=False)
+	while True:
+		solution = sol.next()
+		print ("Process %d found %s."%(os.getpid(), str(solution)))
 		
 ### Partition search space
 A2 = H[:n-2, :n-2]
@@ -210,24 +243,59 @@ else:
 		print("For %d Workers we get:"%nWorkers)
 		print("%d processes for which S1 is split into %d parts …"%((len(S0)-r), m))
 		S0 = list(S0)
-		print len(S0[r:])
 		for elem in S0[r:]:
 			for arr in array_split(S1,m):
 				adaptedSetFunctions.append(getNewSetFunc(set([elem]), set(arr)))	
 		print("… and %d processes for which S1 is split into %d parts."%(r, (m+1)))
-		print len(S0[:r])
 		for elem in S0[:r]:
 			for arr in array_split(S1, m+1):
 				adaptedSetFunctions.append(getNewSetFunc(set([elem]), set(arr)))
+				
+print("S0 is now split into:")
+for fx in adaptedSetFunctions:
+	print( fx((0,)) )
+	
+print("S1 is now split into:")
+for fx in adaptedSetFunctions: print( fx((1,)) )
+			
 		
 m = Manager()
 solutions = m.list()
 workers = []
 
 if __name__ == "__main__":
-
+	
+	## Find nWorkers new subQAMs
+	quitEv = Event()
+	done = Event()
+	maxSols = 10*nWorkers
+	print("Looking for new subproblems.")
 	for partitionFunc in adaptedSetFunctions:
-		p = Process(target = searchWorker, args = (solutions, A2, partitionFunc))
+		
+		p = Process(target = preSearchWorker, args = (solutions, A2, partitionFunc, done, quitEv, maxSols))
 		p.start()
 		workers.append(p)
+	quitEv.wait()
+	done.set()
+	for p in workers:
+		p.terminate()
 		
+	newQAMSubs = []
+	A = H[:n-1, :n-1]
+	for sol in list(solutions):
+		B = copy(A)
+		for k,v in sol.iteritems():
+			B[k,-1] = B[-1, k] = v
+		print("%s\n"%str(B))
+		newQAMSubs.append(B)
+		
+	## 
+	workers = []
+	for i in range(nWorkers):
+		sub = choice(newQAMSubs)
+		newQAMSubs.remove(sub)
+		print len(newQAMSubs)
+		print("Starting work on \n%s."%str(sub))
+		p = Process(target = finalSearchWorker, args = (sub, getOriginalSetFunction(sub)) )
+		workers.append(p)
+		p.start()
