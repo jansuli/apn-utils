@@ -97,7 +97,7 @@ def benchmarkRoutine(n):
 
 		# Add variables and domains
 		for i in range(n-1):
-			p.addVariable(i, S(i,))
+			p.addVariable(i, S((i,)))
 
 		# Add constraints
 		for indices in sumIndices:
@@ -110,7 +110,7 @@ def benchmarkRoutine(n):
 			
 		############ Set up CSP using simpleai ##################
 		variables = list(range(n-1))
-		domains = [list(S(i,)) for i in range(n-1)]
+		domains = [list(S((i,))) for i in range(n-1)]
 
 		constraints = list()
 		for indices in sumIndices:
