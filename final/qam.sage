@@ -127,9 +127,9 @@ def benchmarkRoutine(n):
 		def getProblemIterator():
 			startColumn = matrix(K, n-1, 1)
 			
-			def getSetFn(oldFn, xi, pos):
+			def getSetFn(oldFn, xi, position):
 				def newSetFn(indices):
-					return oldFn(indices).intersection(set([xi + v for v in oldFn(tuple([pos])+indices)]))
+					return oldFn(indices).intersection(set([xi + v for v in oldFn((position,)+indices)]))
 				return newSetFn	
 					
 			def nextComponent(columnTilNow, setFn):
