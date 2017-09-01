@@ -204,7 +204,7 @@ def benchmarkRoutine(n):
 	
 # Do benchmarks for different n and plot everything
 
-for i in range(7,8):
+for i in range(5,8):
 	print ("Benchmarking dimension %d."%i)
 	dataSingle, dataMulti = benchmarkRoutine(i)
 	
