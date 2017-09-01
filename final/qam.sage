@@ -97,7 +97,7 @@ def benchmarkRoutine(n):
 
 		# Add variables and domains
 		for i in range(n-1):
-			p.addVariable(i, S((i,)))
+			p.addVariable(i, list(S((i,))))
 
 		# Add constraints
 		for indices in sumIndices:
