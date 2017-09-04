@@ -2,9 +2,15 @@ from multiprocessing import cpu_count, Process, Manager, Event
 from numpy import array_split,array
 import os
 
-n = 8
+n = 6
 K.<w> = GF(2^n, 'w',repr="log")
 KSet = set(K.list())
+
+dual = K.dual_basis()
+
+resultDir = "QAMResults_n=%d"%n
+if not os.path.isdir(resultDir):
+	os.mkdir(resultDir)
 
 nWorkers = max([4,cpu_count()])
 
@@ -22,11 +28,28 @@ for i in range(n):
 	for j in range(n):
 		M[i,j] = w^(j*2^i)
 		
+Mtheta = matrix(K,n,n)
+for i in range(n):
+	for j in range(n):
+		Mtheta[i,j] = dual[j]^(2^i)
+		
+def getPolynomFromQAM(qam):
+	polStr = ""
+	cf = Mtheta*qam*Mtheta.transpose()
+	for j in range(n):
+		for i in range(j):
+			if cf[i,j] != 0:
+				powerOfX = 2^i + 2^j
+				polStr += "w^%s * x^%d + "%(str(cf[i,j]), powerOfX)
+	return polStr[:-2]
+			
 # coefficient matrix for gold function	
 Cf = matrix(K,n,n)
 Cf [0,1] = Cf[1,0] = 1
 
 H = M.transpose()*Cf*M
+
+print getPolynomFromQAM(H)
 
 def rowSpan(rowVector):
 	'''Takes a row vector and outputs the subspace spaned by its elements as a set.'''
@@ -42,7 +65,6 @@ def checkRowRank(row):
 	testMatrix = matrix( GF(2), n,0)
 	for i in range(row.ncols()):
 		testMatrix = testMatrix.augment(matrix(vector(row[0,i])).transpose())
-	#print testMatrix.str()
 	return testMatrix.rank()
 		
 		
@@ -50,9 +72,8 @@ def checkQAM(mat):
 	N = mat.ncols()
 	for ind in combinations[N][1:]:		
 		testGenerator = matrix(sum(mat[ind,:]))
-		#print testGenerator
 		if checkRowRank(testGenerator) != N-1:
-			print("no qam caus of sum of %s"%str(ind))
+			print("No QAM because of sum of %s"%str(ind))
 			return False
 	else:
 		print ("QAM")
@@ -122,8 +143,8 @@ def getSetFn(oldFn, xi, pos):
 					
 def nextComponent(columnTilNow, setFn, nNeeded):
 	newCol = copy(columnTilNow)
-	pos = n - (newCol.list().count(0) + 1)
-	domain = setFn(tuple([pos]))
+	pos = nNeeded + 1 - newCol.list().count(0) 
+	domain = setFn((pos,))
 	if len(domain) > 0:
 		for xi in domain:
 			newCol[pos] = xi			
@@ -137,8 +158,8 @@ def nextComponent(columnTilNow, setFn, nNeeded):
 
 def preSearchWorker(solutionList, startMatrix, adaptedDomainFunc, done, quitEv, upperBound):
 	print("Process %d starting work."%os.getpid())
-	startColumn = matrix(K, n-1, 1)	
-	sol = nextComponent(startColumn, adaptedDomainFunc, startMatrix.nrows())
+	startColumn = matrix(K, startMatrix.nrows(), 1)	
+	sol = nextComponent(startColumn, adaptedDomainFunc, startMatrix.nrows()-1)
 	
 	while not done.is_set():
 		solution = sol.next()
@@ -150,11 +171,25 @@ def preSearchWorker(solutionList, startMatrix, adaptedDomainFunc, done, quitEv, 
 				
 def finalSearchWorker(startMatrix, adaptedDomainFunc):
 	print("Process %d looks for final QAM."%os.getpid())
-	startColumn = matrix(K, n-1, 1)	
-	sol = nextComponent(startColumn, adaptedDomainFunc, startMatrix.nrows())
+	startColumn = matrix(K, n-1, 1)
+	nSols = 0	
+	N = startMatrix.nrows()
+	sol = nextComponent(startColumn, adaptedDomainFunc, N-1)
 	while True:
-		solution = sol.next()
-		print ("Process %d found %s."%(os.getpid(), str(solution)))
+		try:
+			solution = sol.next()
+			# Save matrix as txt
+			B = matrix(K, N + 1, N + 1)
+			B[:N,:N] = startMatrix
+			B[-1, :N] = solution.transpose()
+			B[:N, -1] = solution
+			
+			with open(resultDir + "/res_%d.txt"%(os.getpid() + nSols), "w") as f:
+				f.write(B.str() +"\n" + getPolynomFromQAM(B))
+			nSols += 1
+		except StopIteration:
+			print ("Process %d done, quitting."%os.getpid())
+			break
 		
 ### Partition search space
 def partitionDomainFunc(originalSetFunc, nProcesses):
@@ -243,16 +278,18 @@ if __name__ == "__main__":
 		print("%s\n"%str(B))
 		newQAMSubs.append(B)
 		
-	# Work on the newly found subproblems 
+	#Work on the newly found subproblems 
 	workers = []
 	nProblems = nWorkers/4		# supposing nWorkers is divisible by 4 such that we can assing 4 cores to each subproblem
 	for i in range(nProblems):
 		sub = choice(newQAMSubs)
 		newQAMSubs.remove(sub)
-		print len(newQAMSubs)
 		print("Starting work on \n%s."%str(sub))
 		newDomainFuncs = partitionDomainFunc(getOriginalSetFunction(sub), 4)
 		for fx in newDomainFuncs:
 			p = Process(target = finalSearchWorker, args = (sub, fx) )
 			workers.append(p)
 			p.start()
+			
+		for p in workers:
+			p.join()
