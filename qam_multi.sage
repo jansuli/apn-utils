@@ -281,15 +281,16 @@ if __name__ == "__main__":
 	#Work on the newly found subproblems 
 	workers = []
 	nProblems = nWorkers/4		# supposing nWorkers is divisible by 4 such that we can assing 4 cores to each subproblem
-	for i in range(nProblems):
-		sub = choice(newQAMSubs)
-		newQAMSubs.remove(sub)
-		print("Starting work on \n%s."%str(sub))
-		newDomainFuncs = partitionDomainFunc(getOriginalSetFunction(sub), 4)
-		for fx in newDomainFuncs:
-			p = Process(target = finalSearchWorker, args = (sub, fx) )
-			workers.append(p)
-			p.start()
+	while len(newQAMSubs) > 0:
+		for i in range(nProblems):
+			sub = choice(newQAMSubs)
+			newQAMSubs.remove(sub)
+			print("Starting work on \n%s."%str(sub))
+			newDomainFuncs = partitionDomainFunc(getOriginalSetFunction(sub), 4)
+			for fx in newDomainFuncs:
+				p = Process(target = finalSearchWorker, args = (sub, fx) )
+				workers.append(p)
+				p.start()
 			
-	for p in workers:
-		p.join()
+		for p in workers:
+			p.join()
