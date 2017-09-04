@@ -82,7 +82,7 @@ for ind in Indices:
 def S(indices):
 	return returnDict[indices]
 		
-####
+#### MVR+FC Iterator 
 
 assignment = dict()
 variables = set(range(A.nrows()))
@@ -134,32 +134,32 @@ def nextAssignement(assigned, domains, domainFunc):
 			assignment[unassigned[0]] = val
 			print ("Found solution.")
 			yield assignment
+
 sol = nextAssignement(assignment, domains, S)
 
-def getProblemIterator():
-	startColumn = matrix(K, n-1, 1)
+### Original Iterator
 			
-	def getSetFn(oldFn, xi, pos):
-		def newSetFn(indices):
-			return oldFn(indices).intersection(set([xi + v for v in oldFn(tuple([pos])+indices)]))
-		return newSetFn	
+def getSetFn(oldFn, xi, pos):
+	def newSetFn(indices):
+		return oldFn(indices).intersection(set([xi + v for v in oldFn((pos,)+indices)]))
+	return newSetFn	
 					
-	def nextComponent(columnTilNow, setFn):
-		newCol = copy(columnTilNow)
-		pos = n - (newCol.list().count(0) + 1)
-		domain = setFn(tuple([pos]))
-		if len(domain) > 0:
-			for xi in domain:
-				newCol[pos] = xi			
-				if pos < n-2:
-					newSetFn = getSetFn(setFn, xi, pos)
-					for col in nextComponent(newCol, newSetFn):
-						yield col 
-				else:
-					yield newCol
-	return nextComponent(startColumn, S)
-		
-sol2 = getProblemIterator()
+def nextComponent(columnTilNow, setFn):
+	newCol = copy(columnTilNow)
+	pos = n - (newCol.list().count(0) + 1)
+	domain = setFn(tuple([pos]))
+	if len(domain) > 0:
+		for xi in domain:
+			newCol[pos] = xi			
+			if pos < n-2:
+				newSetFn = getSetFn(setFn, xi, pos)
+				for col in nextComponent(newCol, newSetFn):
+					yield col 
+			else:
+				yield newCol
+
+startColumn = matrix(K, n-1, 1)		
+sol2 = nextComponent(startColumn, S)
 		
 
 def applySol(assignment):
