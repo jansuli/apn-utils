@@ -238,8 +238,8 @@ if __name__ == "__main__":
 	A = H[:n-1, :n-1]
 	for sol in list(solutions):
 		B = copy(A)
-		B[-1,:] = sol
-		B[:,-1] = sol.transpose()
+		B[-1,:n-2] = sol.transpose()
+		B[:n-2,-1] = sol
 		print("%s\n"%str(B))
 		newQAMSubs.append(B)
 		
