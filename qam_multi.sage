@@ -114,62 +114,31 @@ def getOriginalSetFunction(startMatrix):
 			
 ####
 
+
 def getSetFn(oldFn, xi, pos):
 	def newSetFn(indices):
-		indices = tuple(sorted(indices))
 		return oldFn(indices).intersection(set([xi + v for v in oldFn((pos,)+indices)]))
-	return newSetFn
-	
-def nextAssignement(variables, assigned, domains, domainFunc, nRows, verbosity = False):
-	unassigned = [v for v in variables if v not in assigned]
-
-	if verbosity: print("Assigned: %s\nUnassigned: %s"%(str(assigned),str(unassigned)))
-
-	if len(assigned) < nRows-1:
-	# We still need to assign at least one variable
+	return newSetFn	
+					
+def nextComponent(columnTilNow, setFn, nNeeded):
+	newCol = copy(columnTilNow)
+	pos = n - (newCol.list().count(0) + 1)
+	domain = setFn(tuple([pos]))
+	if len(domain) > 0:
+		for xi in domain:
+			newCol[pos] = xi			
+			if pos < nNeeded:
+				newSetFn = getSetFn(setFn, xi, pos)
+				for col in nextComponent(newCol, newSetFn):
+					yield col 
+			else:
+				yield newCol	
 		
-		# Sorting by domain size for M(ost) R(estricted) V(ariable) heuristic
-		unassigned = sorted(unassigned, key = lambda v : len(domains[v]) )
-		
-		# Try to assign values to unassigned variables
-		for var in unassigned:
-			
-			if verbosity: print("Testing variable %d."%var)
-			unassignedLeft = [unVar for unVar in unassigned if unVar != var]
-			for val in domains[var]:
-				
-				# Forwardcheck : no unassigned variable should have an empty domain
-				domainFn = getSetFn(domainFunc, val, var)
-				newDomainDict = dict()
-				for unVar in unassignedLeft:
-					domain = domainFn((unVar,))
-					if domain == set():
-						# domain empty
-						break
-					newDomainDict[unVar] = domain
-				else:
-					# Forwardcheck succeeded! Recursion
-					assignment = copy(assigned)
-					assignment[var] = val 
-					for s in  nextAssignement(variables, assignment, newDomainDict, domainFn, nRows, verbosity):
-						yield s
-	else:
-		# Only one unassigned variable with non-empty domain (ensured beforhand by FC)
-		assignment = copy(assigned)
-		var = unassigned[0]
-		for val in domains[var]:
-			assignment[var] = val
-			yield assignment
 
 def preSearchWorker(solutionList, startMatrix, adaptedDomainFunc, done, quitEv, upperBound):
 	print("Process %d starting work."%os.getpid())
-	assignment = dict()
-	variables = set(range(startMatrix.nrows()))
-	domains = dict()
-	for v in variables:
-		domains[v] = adaptedDomainFunc( (v,) )
-
-	sol = nextAssignement(variables, assignment, domains, adaptedDomainFunc, startMatrix.nrows())
+	startColumn = matrix(K, n-1, 1)	
+	sol = nextComponent(startColumn, adaptedDomainFunc, startMatrix.nrows())
 	
 	while not done.is_set():
 		solution = sol.next()
@@ -179,15 +148,10 @@ def preSearchWorker(solutionList, startMatrix, adaptedDomainFunc, done, quitEv, 
 			quitEv.set()
 			break
 				
-def finalSearchWorker(startMatrix, domainFunc):
+def finalSearchWorker(startMatrix, adaptedDomainFunc):
 	print("Process %d looks for final QAM."%os.getpid())
-	assignment = dict()
-	variables = set(range(startMatrix.nrows()))
-	domains = dict()
-	for v in variables:
-		domains[v] = domainFunc( (v,) )
-
-	sol = nextAssignement(variables, assignment, domains, domainFunc, startMatrix.nrows(), verbosity=False)
+	startColumn = matrix(K, n-1, 1)	
+	sol = nextComponent(startColumn, adaptedDomainFunc, startMatrix.nrows())
 	while True:
 		solution = sol.next()
 		print ("Process %d found %s."%(os.getpid(), str(solution)))
@@ -262,7 +226,6 @@ if __name__ == "__main__":
 	maxSols = 10*nWorkers
 	print("Looking for new subproblems.")
 	for partitionFunc in adaptedSetFunctions:
-		
 		p = Process(target = preSearchWorker, args = (solutions, A2, partitionFunc, done, quitEv, maxSols))
 		p.start()
 		workers.append(p)
@@ -275,8 +238,8 @@ if __name__ == "__main__":
 	A = H[:n-1, :n-1]
 	for sol in list(solutions):
 		B = copy(A)
-		for k,v in sol.iteritems():
-			B[k,-1] = B[-1, k] = v
+		B[-1,:] = sol
+		B[:,-1] = sol.transpose()
 		print("%s\n"%str(B))
 		newQAMSubs.append(B)
 		
