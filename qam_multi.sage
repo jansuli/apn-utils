@@ -129,7 +129,7 @@ def nextComponent(columnTilNow, setFn, nNeeded):
 			newCol[pos] = xi			
 			if pos < nNeeded:
 				newSetFn = getSetFn(setFn, xi, pos)
-				for col in nextComponent(newCol, newSetFn):
+				for col in nextComponent(newCol, newSetFn, nNeeded):
 					yield col 
 			else:
 				yield newCol	
