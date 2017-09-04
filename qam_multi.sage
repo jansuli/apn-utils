@@ -117,7 +117,7 @@ def getOriginalSetFunction(startMatrix):
 def getSetFn(oldFn, xi, pos):
 	def newSetFn(indices):
 		indices = tuple(sorted(indices))
-		return oldFn(indices).intersection(set([xi + v for v in oldFn(tuple([pos])+indices)]))
+		return oldFn(indices).intersection(set([xi + v for v in oldFn((pos,)+indices)]))
 	return newSetFn
 	
 def nextAssignement(variables, assigned, domains, domainFunc, nRows, verbosity = False):
