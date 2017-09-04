@@ -2,7 +2,7 @@ from multiprocessing import cpu_count, Process, Manager, Event
 from numpy import array_split,array
 import os
 
-n = 6
+n = 8
 K.<w> = GF(2^n, 'w',repr="log")
 KSet = set(K.list())
 
@@ -291,5 +291,5 @@ if __name__ == "__main__":
 			workers.append(p)
 			p.start()
 			
-		for p in workers:
-			p.join()
+	for p in workers:
+		p.join()
