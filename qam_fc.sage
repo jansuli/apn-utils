@@ -1,4 +1,4 @@
-n = 6
+n = 7
 K.<w> = GF(2^n, 'w',repr="log")
 KSet = set(K.list())
 
@@ -98,18 +98,14 @@ for v in variables:
 		domains[v] = S( (v,) )
 
 def nextAssignement(assigned, domains, domainFunc):
-	print("Entered, %d out of %d assigned.\n%s"%(len(assigned), n-1, str(assigned)))
 	unassigned = [v for v in variables if v not in assigned]
 
 	if len(assigned) < n-2:
 		# mvr:
 		unassigned = sorted(unassigned, key = lambda v : len(domains[v]) )
-		print(unassigned)
 		
 		for var in unassigned:
-			print("Testing var %d for assignment %s."%(var, str(assigned)))
 			unassignedLeft = [unVar for unVar in unassigned if unVar != var]
-			print("Still unassigned vars.")
 			for val in domains[var]:
 				# forwardcheck
 				domainFn = getSetFn(domainFunc, val, var)
@@ -121,25 +117,21 @@ def nextAssignement(assigned, domains, domainFunc):
 						break
 					newDomainDict[unVar] = domain
 				else:
-					#print("FC succeeded! Assigning %s to %d."%(str(val), var))
 					assignment = copy(assigned)
 					assignment[var] = val 
 					for s in  nextAssignement(assignment, newDomainDict, domainFn):
 						yield s
-		#yield
 	else:
-		#print(unassigned, domains[unassigned[0]])
 		assignment = copy(assigned)
 		for val in domains[unassigned[0]]:
 			assignment[unassigned[0]] = val
-			print ("Found solution.")
 			yield assignment
 
 sol = nextAssignement(assignment, domains, S)
 
 ### Original Iterator
 			
-def getSetFn(oldFn, xi, pos):
+def getSetFnOr(oldFn, xi, pos):
 	def newSetFn(indices):
 		return oldFn(indices).intersection(set([xi + v for v in oldFn((pos,)+indices)]))
 	return newSetFn	
@@ -152,7 +144,7 @@ def nextComponent(columnTilNow, setFn):
 		for xi in domain:
 			newCol[pos] = xi			
 			if pos < n-2:
-				newSetFn = getSetFn(setFn, xi, pos)
+				newSetFn = getSetFnOr(setFn, xi, pos)
 				for col in nextComponent(newCol, newSetFn):
 					yield col 
 			else:
