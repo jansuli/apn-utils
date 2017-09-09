@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from multiprocessing import Process, Manager, cpu_count
 from Queue import Empty
 import pickle
@@ -104,7 +107,7 @@ if __name__ == "__main__":
 	rankDists = manager.Queue()
 	jobs = manager.Queue()
 	
-	functionStrings = functions.replace("\n","").split(',')[:2]
+	functionStrings = functions.replace("\n","").split(',')
 	for funcString in functionStrings:
 		jobs.put(funcString)
 	
