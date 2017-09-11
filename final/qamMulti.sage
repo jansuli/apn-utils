@@ -2,7 +2,6 @@ from multiprocessing import cpu_count, Process, Manager, Event, Queue
 from Queue import Empty
 from numpy import array_split,array
 import os
-from time import time
 
 n = 8
 K.<w> = GF(2^n, 'w', repr="log")
@@ -186,9 +185,11 @@ def finalSearchWorker(subMatrix, adaptedFunc):
 	N = subMatrix.nrows()
 	startColumn = matrix(K, N, 1)
 	solutionIterator = nextComponent(startColumn, adaptedFunc, N-1)
+	counter = 0
 	while True:
 		try:
 			solution = solutionIterator.next()
+			counter += 1
 			
 			B = matrix(K, N + 1, N + 1)
 			B[:N,:N] = subMatrix
@@ -197,7 +198,7 @@ def finalSearchWorker(subMatrix, adaptedFunc):
 			
 			print("%d found QAM\n%s\n"%(os.getpid(), B.str()))
 						
-			with open(resultDir + "/res_%.2f.txt"%(time), "w") as f:
+			with open(resultDir + "/res_%d.txt"%(os.getpid() + counter), "w") as f:
 				f.write(B.str() +"\n" + getPolynomFromQAM(B))
 		
 		except StopIteration:
