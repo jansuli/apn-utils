@@ -44,10 +44,10 @@ for g in KL:
                     if f(x) + f(x+a) + f(y) + f(y+a) == g:
                         constraintTuple = (x, x+a, y, y+a)
                         newRow = matrix(GF(2), 1, 2^n)
-                        ones = []
+
                         for elem in constraintTuple:
-                            ones.append(KL.index(elem))
-                        newRow[0, ones] = 1
+                            newRow[0,KL.index(elem)] = 1
+                        
                         if not vector(newRow) in M.rows():
                             M = M.stack(newRow)
                             rank = M.rank()
