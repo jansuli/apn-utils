@@ -52,9 +52,10 @@ for g in KL:
                             M = M.stack(newRow)
                             rank = M.rank()
                             print("Added row to M which now has rank %d."%rank)
-                        if rank >= 2^n:
-                            print("Rank of M is too big, only solution is zero.")
-                            break
+                            
+                            if rank >= 2^n:
+                                print("Rank of M is too big, only solution is zero.")
+                                break
                 else:
                     continue
                 break
