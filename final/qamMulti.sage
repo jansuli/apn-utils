@@ -157,7 +157,7 @@ def finalSearchWorkerInitiator(preSolutionQueue, startMatrix, nProcesses):
 	while True:
 		try:
 			print("Initiating group of %d workers whilst having %d sub problems."%(nProcesses, preSolutionQueue.qsize()))
-			preSol = preSolutionQueue.get_nowait()
+			preSol = preSolutionQueue.get(timeout=5)
 
 			subMatrix = copy(startMatrix)
 			N = startMatrix.nrows()
