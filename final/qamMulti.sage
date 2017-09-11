@@ -164,9 +164,8 @@ def finalSearchWorkerInitiator(preSolutionQueue, startMatrix, nProcesses):
 
 			subMatrix[:N-1, -1] = preSol
 			subMatrix[-1, :N-1] = preSol.transpose()
-			print("sub")
+			
 			domainFunc = getOriginalSetFunction(subMatrix)
-			print("original")
 			adaptedDomainFunctions = partitionDomainFunc(domainFunc, nProcesses)
 			
 			workers = []
