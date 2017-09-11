@@ -48,7 +48,7 @@ for g in KL:
                         for elem in constraintTuple:
                             newRow[0,KL.index(elem)] = 1
                         
-                        if not vector(newRow) in M.rows():
+                        if not newRow.rows()[0] in M.rows():
                             M = M.stack(newRow)
                             rank = M.rank()
                             print("Added row to M which now has rank %d."%rank)
