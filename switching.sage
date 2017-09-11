@@ -69,5 +69,6 @@ for g in KL:
             
             #print("Now interpolating them.")
             #newAPNs = [lagrangeInterpolation(switchingAPN(vec,g)) for vec in M.right_kernel()]
-            #switchingAPNs += newAPNs                              
+            #switchingAPNs += newAPNs      
+            continue
         break
