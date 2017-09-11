@@ -1,12 +1,8 @@
-#from sympy import var as syVar
-from sympy.logic.boolalg import to_cnf, conjuncts
-from tqdm import tqdm
 import pickle
 
-n = 8
-K.<w> = GF(2^n, 'w' ,repr="log")
-R.<x> = PolynomialRing(K, 'x')
-
+n = 7
+K.<w> = GF(2^n, 'w' )#,repr="log")
+KSet = set(K.list())
 KBasis = [w^i for i in range(n)]
 DualBasis = K.dual_basis()
 
@@ -45,22 +41,14 @@ def checkQAM(mat):
 	else:
 		print ("QAM")
 		return True
+		
 
 def rowSpan(row, matrix = False):
 	ret = set()
-	if matrix:
-		N = row.ncols()
-		print "Matrix"
-		for ind in combinations[N]:
-			ret.add( sum( row[0, ind].list() ))
-		return ret
-	else:
-		N = len(row)
-		#print N
-		for ind in combinations[N]:
-			#print ind
-			ret.add( K(sum([row[i] for i in ind])) )
-		return ret	
+	N = len(row)
+	for ind in combinations[N]:
+		ret.add( K(sum([row[i] for i in ind])) )
+	return ret	
 	
 def f(x):
 	return x^3
@@ -69,49 +57,35 @@ Cf = matrix(K,n,n)
 Cf [0,1] = Cf[1,0] = 1
 
 H = M.transpose()*Cf*M
-KSet = set(K.list())
 
-def affineTranslations(rowVector):
+def rowSpan(rowVector):
+	'''Takes a row vector and outputs the subspace spaned by its elements as a set.'''
+	
+	N = len(rowVector)
+	span = set()
+	for ind in combinations[N]:
+		newElem = sum([rowVector[i] for i in ind])
+		span.add( K(newElem) )
+	return span
+		
+def cosetRepr(rowVector):
+	'''Takes a row vector and returns a set of representative elements of cosets translating the row space.'''
+	 
 	V = rowSpan(rowVector)
-	domain = KSet.difference(V)
-	translations = []
+	complement = KSet.difference(V)
+	representatives = set()
 	build = set()
-	for a in domain:
-		v = V.pop()
-		if a+v not in build:
-			V.add(v)
-			coset = set( [a+v for v in V] )
+	
+	V = list(V)
+	a = choice(V)
+	while a == 0:
+		a = choice(V)
+	for w in complement:
+		if w + a not in build:
+			coset = set( [v+w for v in V] )
 			build = build.union(coset)
-			translations.append(a)	
-		else:
-			V.add(v)	
-			
-	return translations
-	
-def affineUnion(rowVector, offset = 0):
-	print ("affine union")
-	translations = affineTranslations(rowVector)
-	
-	if offset == 0:
-		return translations
-	else:
-		ret = set()
-		V = rowSpan( rowVector[offset:] )
-		for a in translations:
-			ret = ret.union( set([a + v for v in V]))
-		return list(ret)
-
-########## Treat as CSP ########
-
-def getDomains(mat):
-	domains = dict()
-	N = mat.nrows()
-	print N
-	for i in range(2):
-		domains[i] = affineUnion(mat.rows()[i],i)
-	for i in range(2,N):
-		domains[i] =  list(KSet.difference( rowSpan(mat.rows()[i]) ))
-	return domains
+			representatives.add(w)
+	return representatives
 
 		
 def differConstraint(vec):
@@ -121,7 +95,6 @@ def differConstraint(vec):
 	for elem in vec:
 		subexpression = "Or( "
 		binary = vector(elem)
-		print (elem,binary)
 		for entry in binary:
 			if entry == 1:
 				subexpression += "~{%d},"%count
@@ -165,30 +138,41 @@ def generatePreSat(mat, filename, differ = None):
 		print differExpr
 		expressionList.append(differExpr)
 	
-	# Add domain constraints. Domains have size at most 3*2^(N-1), while the set difference has size 2^(N-1).
-	# Both constraint types are equivalent and produce same amount of clauses
-	for i in range(N):
-		if i <= 1:
-			aff = affineUnion(mat.rows()[i],i)
-			print aff
-			rowSpace = Kset.difference(aff)
-			#rowSpace = rowSpan(mat.rows()[i])
+	# Add domain constraints using S
+	# search space reduction
+	S0 = cosetRepr(A.rows()[0])
+	S1 = set()
+	Vred = rowSpan(A.rows()[1][1:])
+	for v in cosetRepr(A.rows()[1]):
+		S1 = S1.union(set( v + a for a in Vred))
+
+	def S(indices):
+		if len(indices) == 1 :
+			index = indices[0]
+			if index == 0:
+				return S0
+			elif index == 1:
+				return S1
+			else:
+				return KSet.difference( rowSpan(A.rows()[index]) )
 		else:
-			rowSpace = rowSpan(mat.rows()[i])
-			print (0 in rowSpace)
+			return KSet.difference( rowSpan( sum(A[indices, :]) ) )
+			
+	for i in range(N):
 		offset = i*dim + 1
 		
 		formatting = ["x%d"%j for j in range(offset, offset+dim)]
-		expr = notInSetConstraint(rowSpace) 
+		expr = notInSetConstraint(KSet.difference(S((i,)))) 
 		constraintExpression = expr.format(*formatting)
 		expressionList.append(constraintExpression)
 		
 	expression1 = "And("+ ",".join(expressionList)+")"  # everything up till now is already in CNF and doesn't need to be transformed
 	expressionList = []
-	print expression1
+	
 	sumIndices = [ind for ind in combinations[N] if len(ind) > 1]
 	for ind in sumIndices:
-		formatting = ["Xor( " for i in range(dim)] # put #dim xor's into constraintFunctions  
+		formatting = ["Xor( " for i in range(dim)] 	# put n xor's into constraintFunctions  
+		
 		# Iterate over vectors/rows to add:
 		for i in ind:
 			offset = i*dim + 1
@@ -196,13 +180,11 @@ def generatePreSat(mat, filename, differ = None):
 				formatting[j] += "x%d,"%(offset+j)
 		formatting = [formatting[i][:-1] + " )" for i in range(dim)]
 		
-		rowSum = sum(mat[ind, :].rows()) 
+		rowSum = sum(mat[ind, :].rows())
 		expr = notInSetConstraint( rowSpan(rowSum) )
 		constraintExpression = expr.format(*formatting)
 		
 		expressionList.append(constraintExpression)
-		
-	#completeExpression = "And( " + ",".join(expressionList) + " )"
 	
 	with open(filename, "w") as f:
 		pickle.dump((expression1, expressionList),f)
@@ -246,21 +228,10 @@ def applySatSolution(filename, sub):
 	mat = sub.stack( matrix(k, columnElems) )
 	mat = mat.augment(matrix(k, columnElems + [0]).transpose())
 	return mat
-	
-def genMultiple(prefix, maxN):
-	for i in range(maxN + 1):
-		M = applySatSolution(prefix + "%d.txt"%i, A)
-		lastCol = M[:, -1].list()
-		generatePreSat(M,prefix + "%d.pre"%i, differ = lastCol)
-	print("Saved all")
 		
 	
 # Change last two columns of H, should be different:
 A = H[:n-1, :n-1]
-lastCol = vector( H[:,-2].list()[:-2] )
-#print lastCol
+lastCol = vector( H[:,-1].list()[:-1] )
 
-generatePreSat(A, "sat%d.pre"%n)#, differ=lastCol)
-
-		
-	
+generatePreSat(A, "_sat%d.pre"%n) # differ=lastCol)
