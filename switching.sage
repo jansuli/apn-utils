@@ -65,7 +65,7 @@ for g in KL:
         else:
         # Successfully built constraint matrix M for given g.
             MKernel = M.right_kernel()
-            print("We have %d Boolean functions."%(2^MKernel.dimension()-1))
+            print("We have %d Boolean functions for g=%s."%(2^MKernel.dimension()-1, str(g)))
             
             #print("Now interpolating them.")
             #newAPNs = [lagrangeInterpolation(switchingAPN(vec,g)) for vec in M.right_kernel()]
