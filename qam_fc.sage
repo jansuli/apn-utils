@@ -146,9 +146,11 @@ def nextComponent(columnTilNow, setFn):
 			if pos < n-2:
 				newSetFn = getSetFnOr(setFn, xi, pos)
 				for col in nextComponent(newCol, newSetFn):
-					yield col 
+					if col != None: yield col 
 			else:
 				yield newCol
+	else:
+		yield
 
 startColumn = matrix(K, n-1, 1)		
 sol2 = nextComponent(startColumn, S)
