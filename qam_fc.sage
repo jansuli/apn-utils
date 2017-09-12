@@ -103,24 +103,23 @@ def nextAssignement(assigned, domains, domainFunc):
 	if len(assigned) < n-2:
 		# mvr:
 		#unassigned = sorted(unassigned, key = lambda v : len(domains[v]) )
-		
-		for var in unassigned:
-			unassignedLeft = [unVar for unVar in unassigned if unVar != var]
-			for val in domains[var]:
-				# forwardcheck
-				domainFn = getSetFn(domainFunc, val, var)
-				newDomainDict = dict()
-				for unVar in unassignedLeft:
-					domain = domainFn((unVar,))
-					if domain == set():
-						#print("Forward Check failed. Backtracking.")
-						break
-					newDomainDict[unVar] = domain
-				else:
-					assignment = copy(assigned)
-					assignment[var] = val 
-					for s in  nextAssignement(assignment, newDomainDict, domainFn):
-						yield s
+		var = unassigned[0]
+		unassignedLeft = [unVar for unVar in unassigned if unVar != var]
+		for val in domains[var]:
+			# forwardcheck
+			domainFn = getSetFn(domainFunc, val, var)
+			newDomainDict = dict()
+			for unVar in unassignedLeft:
+				domain = domainFn((unVar,))
+				if domain == set():
+					#print("Forward Check failed. Backtracking.")
+					break
+				newDomainDict[unVar] = domain
+			else:
+				assignment = copy(assigned)
+				assignment[var] = val 
+				for s in nextAssignement(assignment, newDomainDict, domainFn):
+					if s != None: yield s
 	else:
 		assignment = copy(assigned)
 		for val in domains[unassigned[0]]:
