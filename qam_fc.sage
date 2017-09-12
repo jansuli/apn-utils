@@ -102,7 +102,7 @@ def nextAssignement(assigned, domains, domainFunc):
 
 	if len(assigned) < n-2:
 		# mvr:
-		unassigned = sorted(unassigned, key = lambda v : len(domains[v]) )
+		#unassigned = sorted(unassigned, key = lambda v : len(domains[v]) )
 		
 		for var in unassigned:
 			unassignedLeft = [unVar for unVar in unassigned if unVar != var]
