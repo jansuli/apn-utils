@@ -18,6 +18,16 @@ nSplit = 3
 nCores = max( [nSplit, floor(cpu_count()/nSplit)*nSplit] ) 	# built for 24 cores
 nGroups = nCores/nSplit
 
+# Settings for adaptive Timeout
+ADAPT_TIMEOUT = True		# wether or not timeout might change
+INIT_STRATEGY = "MINIMUM" 	# "MINIMUM" or "MEAN", cf gaugeTimeout below
+EASE_ON_FAIL  = True		# give workers more time to find QAMs when they fail
+UPPER_FACTOR = 1.3			# if EASE_ON_FAIL: upper bound on timeout by multiplication with initial value
+INCREMENTAL_FACTOR = 1.2	# if EASE_ON_FAIL: incremental factor on current timeout
+INIT_FACTOR = 1.3			# factor to apply to value given by INIT_STRATEGY 
+LOWER_BOUND = 100			# reset by gaugeTimeout
+UPPER_BOUND = 1000			# reset by gaugeTimeout
+
 # determine combination indices beforehand to save time later on
 combinations = {
 	n-3 : Combinations(n-3).list(),
@@ -263,15 +273,19 @@ def preSearch(finalSolutionQueue, solutionIterator, startMatrix, initTimeout = N
 					TIMEOUT = timeoutObj.value
 					 
 			subprocesses = []
+			subpids = []
 			foundEvent = Event()											# Avoid killing productive workers
 			for i in range(nSplit):
 				finalDomainDict, finalSub = preSolutionQueue.get(timeout=5) # Get a job...
 		
 				p = Process( target=finalSearch, args=(foundEvent, finalDomainDict, finalSub, timeoutObj, finalSolutionQueue, pid) )
 				p.start()
+				subpids.append(str(p.pid))
 				subprocesses.append(p)
 			
-			subprocesses[0].join( timeout = TIMEOUT ) # join first process with timeout
+			subpidStr = ",".join(subpids)
+			print("Processes %s started final search."%subpidStr)
+			subprocesses[0].join( timeout = TIMEOUT ) 						# join first process with timeout
 			
 			if foundEvent.is_set():
 				# one subprocess found a solution, let all of them finish
@@ -286,16 +300,20 @@ def preSearch(finalSolutionQueue, solutionIterator, startMatrix, initTimeout = N
 						downAdjust = True
 					p.terminate()
 				
-				if downAdjust and timeoutObj:
+				if ADAPT_TIMEOUT and timeoutObj and downAdjust:
 					# one subprocess completed whole search before timeout
 					with timeoutObj.get_lock():
-						timeoutObj.value = timeoutObj.value * 0.9
-						print("TIMEOUT for %d now is %d secs as it seemed to low."%(pid,timeoutObj.value))
+						newTIMEOUT = timeoutObj.value * 0.9
+						timeoutObj.value = timeoutObj.value if newTIMEOUT < LOWER_BOUND else newTIMEOUT
+						print("TIMEOUT for %d now is %d secs as it seemed to high."%(pid,timeoutObj.value))
 
-				elif timeoutObj:		
+				elif ADAPT_TIMEOUT and timeoutObj and EASE_ON_FAIL:		
 					with timeoutObj.get_lock():
-						timeoutObj.value = min( [floor(1.5*initialTimeout),timeoutObj.value * 1.1] )
+						newTIMEOUT =  floor(timeoutObj.value * INCREMENTAL_FACTOR)
+						timeoutObj.value = timeoutObj.value if newTIMEOUT > UPPER_BOUND else newTIMEOUT
 						print("TIMEOUT for %d now is %d secs as it seemed to harsh."%(pid,timeoutObj.value))
+				if not downAdjust:
+					print("All subprocesses timed out.")
 		
 		elif preIterationStopped != True:
 			try:
@@ -317,7 +335,6 @@ def preSearch(finalSolutionQueue, solutionIterator, startMatrix, initTimeout = N
 			
 def finalSearch(foundEv, domainDict, submatrix, timeoutObj, finalSolutionQueue, parentPID):
 	pid = getpid()
-	print("Process %d started looking for final column."%pid)
 	def domainFunc(ind):
 		return domainDict[ind]
 	
@@ -334,12 +351,12 @@ def finalSearch(foundEv, domainDict, submatrix, timeoutObj, finalSolutionQueue, 
 			if solCounter == 1:
 				t_end = time()
 				q = finalSolutionQueue.qsize() + 2
-				if timeoutObj:
+				if ADAPT_TIMEOUT and timeoutObj:
 					with timeoutObj.get_lock():
-						oldTIMEOUT = timeoutObj.value 
+						oldTIMEOUT = timeoutObj.value
 						newTIMEOUT = (q-1)/q * oldTIMEOUT + 1/q*floor(1.1*(t_end - t_start))
-						timeoutObj.value = newTIMEOUT
-					print("TIMEOUT for process %d now is %d secs."%(parentPID,newTIMEOUT))
+						timeoutObj.value = newTIMEOUT if LOWER_BOUND <= newTIMEOUT <= UPPER_BOUND else oldTIMEOUT
+						print("TIMEOUT for process %d now is %d secs."%(parentPID,timeoutObj.value))
 					
 			qam = extendSubQAM(submatrix, qamSolution)
 			poly = getPolynomFromQAM(qam)
@@ -372,6 +389,7 @@ def estimatorSearch(solIterator, firstSolTime):
 		
 def gaugeTimeout():
 	print("Trying to append to gold QAM to gauge timeout.")
+	global LOWER_BOUND, UPPER_BOUND
 	
 	A = H[:n-1, :n-1]
 	S = getOriginalDomainFunction(A)
@@ -380,22 +398,36 @@ def gaugeTimeout():
 	timesV = []
 	for fx in domainFuncs:
 		sol = setUpIterator(n-1, fx)
-		solTime = Value('d', randint(20,50))
+		solTime = Value('d')
 		p = Process( target=estimatorSearch, args=(sol,solTime) )
 		p.start()
 		estimators.append(p)
 		timesV.append(solTime)
 	for p in estimators:
 		p.join()
-		
+	
+	print("Estimations done.")
 	times = []
 	for sT in timesV:
 		with sT.get_lock():
 			times.append(sT.value)
-	print times
-	timeout = max([floor(max(times)*1.1),1])
-	print("Estimations done.")
-	print("Initial Timeout set to %d secs."%timeout)
+			
+	solTimes = [t for t in times if t >= 0 ]
+	unSolTimes = [-t for t in times if t < 0]
+	
+	if len(solTimes) > 0:
+		if INIT_STRATEGY == "MINIMUM":
+			timeout = max([1,floor(min(solTimes)*INIT_FACTOR)])
+	
+		elif INIT_STRATEGY == "MEAN":
+			timeout = max([1,floor(mean(solTimes)*INIT_FACTOR)])
+	else:
+		timeout = floor(min(unSolTimes))
+		
+	LOWER_BOUND = timeout
+	UPPER_BOUND = ceil(timeout*UPPER_FACTOR)
+	
+	print("Initial Timeout set to %d secs by %s strategy."%(timeout, INIT_STRATEGY))
 	
 	return timeout
 	
@@ -413,7 +445,7 @@ def saveSols(solQueue):
 if __name__ == "__main__":
 	try:
 		initialTimeout = gaugeTimeout()
-	
+		print(LOWER_BOUND, UPPER_BOUND)
 		# Set up pre-Search preliminaries
 		A2 = H[:n-2, :n-2]
 		S2 = getOriginalDomainFunction(A2)
