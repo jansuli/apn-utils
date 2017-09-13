@@ -55,7 +55,7 @@ def getPolynomFromQAM(qam):
 					polStr += "x^%d + "%(powerOfX)
 	return polStr[:-3]
 	
-print(getPolynomFromQAM(H))
+print("Set up with initial QAM\n%s\n%s."%(H.str(),getPolynomFromQAM(H)))
 	
 def rowSpan(rowVector):
 	'''Takes a row vector and outputs the subspace spaned by its elements as a set.'''
@@ -255,43 +255,47 @@ def preSearch(finalSolutionQueue, solutionIterator, startMatrix, initTimeout = N
 		TIMEOUT = None
 		timeoutObj = None
 	
-	timeoutCounter = 0
 	while True:
-		if preSolutionQueue.qsize() > 1 and preIterationStopped != True:
+		if preSolutionQueue.qsize() > nSplit and preIterationStopped != True:
+			print("\n--%s--\n-------------------------------------------------------"%pid)
 			if timeoutObj:
 				with timeoutObj.get_lock():
 					TIMEOUT = timeoutObj.value
 					 
-			finalDomainDict, finalSub = preSolutionQueue.get(timeout=5) 		# Get a job...
+			subprocesses = []
+			foundEvent = Event()											# Avoid killing productive workers
+			for i in range(nSplit):
+				finalDomainDict, finalSub = preSolutionQueue.get(timeout=5) # Get a job...
 		
-			foundEvent = Event()												# Avoid killing productive workers
-			p = Process( target=finalSearch, args=(foundEvent, finalDomainDict, finalSub, timeoutObj, finalSolutionQueue, pid) )
-			p.start()
-			t_start = time()
-			p.join( timeout=TIMEOUT )
-			if p.is_alive():
-				print("Subprocess %d of Parent %d timed out."%(p.pid, pid))
-				if foundEvent.is_set():
-					print("But it found a solution. So we will let it run.")
-					timeoutCounter = 0
+				p = Process( target=finalSearch, args=(foundEvent, finalDomainDict, finalSub, timeoutObj, finalSolutionQueue, pid) )
+				p.start()
+				subprocesses.append(p)
+			
+			subprocesses[0].join( timeout = TIMEOUT ) # join first process with timeout
+			
+			if foundEvent.is_set():
+				# one subprocess found a solution, let all of them finish
+				print("Waiting for all sub processes to finish")
+				for p in subprocesses:
 					p.join()
-				else:
-					p.terminate()
-					timeoutCounter += 1
-					if timeoutCounter == nSplit:
-						timeoutCounter = 0
-						if TIMEOUT <= 2*initTimeout:
-							with timeoutObj.get_lock():
-								timeoutObj.value = timeoutObj.value * 1.25
-								print("TIMEOUT for %d now is %d secs as it seemed to harsh."%(pid,timeoutObj.value))
 			else:
-				print("Subprocess %d of Parent %d stopped within timeout."%(p.pid, pid))
-				t_end = time()
-				tDelta = 0.9* (t_end - t_start)
-				with timeoutObj.get_lock():
-					timeoutObj.value = tDelta
-					print("TIMEOUT for %d lowered from %d to %d."%(pid,TIMEOUT, tDelta))
-						
+				downAdjust = False
+				for p in subprocesses:
+					if not p.is_alive():
+						print("Sub process %d fininshed in time."%p.pid)
+						downAdjust = True
+					p.terminate()
+				
+				if downAdjust and timeoutObj:
+					# one subprocess completed whole search before timeout
+					with timeoutObj.get_lock():
+						timeoutObj.value = timeoutObj.value * 0.9
+						print("TIMEOUT for %d now is %d secs as it seemed to low."%(pid,timeoutObj.value))
+
+				elif timeoutObj:		
+					with timeoutObj.get_lock():
+						timeoutObj.value = timeoutObj.value * 1.1
+						print("TIMEOUT for %d now is %d secs as it seemed to harsh."%(pid,timeoutObj.value))
 		
 		elif preIterationStopped != True:
 			try:
@@ -330,11 +334,12 @@ def finalSearch(foundEv, domainDict, submatrix, timeoutObj, finalSolutionQueue, 
 			if solCounter == 1:
 				t_end = time()
 				q = finalSolutionQueue.qsize() + 2
-				with timeoutObj.get_lock():
-					oldTIMEOUT = timeoutObj.value 
-					newTIMEOUT = (q-1)/q * oldTIMEOUT + 1/q*floor(1.1*(t_end - t_start))
-					timeoutObj.value = newTIMEOUT
-				print("TIMEOUT for process %d now is %d secs."%(parentPID,newTIMEOUT))
+				if timeoutObj:
+					with timeoutObj.get_lock():
+						oldTIMEOUT = timeoutObj.value 
+						newTIMEOUT = (q-1)/q * oldTIMEOUT + 1/q*floor(1.1*(t_end - t_start))
+						timeoutObj.value = newTIMEOUT
+					print("TIMEOUT for process %d now is %d secs."%(parentPID,newTIMEOUT))
 					
 			qam = extendSubQAM(submatrix, qamSolution)
 			poly = getPolynomFromQAM(qam)
@@ -375,41 +380,16 @@ def gaugeTimeout():
 	times = []
 	for fx in domainFuncs:
 		sol = setUpIterator(n-1, fx)
-		solTime = Value('d')
+		solTime = Value('d', randint(20,50))
 		p = Process( target=estimatorSearch, args=(sol,solTime) )
 		p.start()
 		estimators.append(p)
 		times.append(solTime)
 	for p in estimators:
 		p.join()
-		
+	times = [solTime.value for solTime in times]
+	timeout = max([floor(max(times)*1.1),1])
 	print("Estimations done.")
-	solMean = 0
-	divisorSol = 0
-	unSolMean = 0
-	divisorUnSol = 0
-	for t in times:
-		if t.value > 0:
-			solMean += t.value
-			divisorSol += 1
-		else:
-			unSolMean += -t.value
-			divisorUnSol += 1
-			
-	if divisorSol != 0 and divisorUnSol != 0: 
-		solMean = solMean/divisorSol
-		unSolMean = unSolMean/divisorUnSol
-		
-	if divisorSol != 0 and divisorUnSol != 0:
-		factor = (unSolMean/solMean - 1)/2 + 1
-		timeout = solMean * factor
-	elif divisorSol != 0 and divisorUnSol == 0:
-		timeout = 3*solMean
-	elif divisorSol == 0 and divisorUnSol != 0:
-		timeout = unSolMean
-	timeout = floor(timeout)				# milliseconds
-	print("Mean time for finding first solution: %f secs."%solMean)
-	print("Mean time for doing complete search: %f secs."%unSolMean)
 	print("Initial Timeout set to %d secs."%timeout)
 	
 	return timeout
@@ -420,15 +400,14 @@ if __name__ == "__main__":
 	# Set up pre-Search preliminaries
 	A2 = H[:n-2, :n-2]
 	S2 = getOriginalDomainFunction(A2)
-	partitionedFuncs = partitionDomainFunc(S2, nCores)
+	partitionedFuncs = partitionDomainFunc(S2, nGroups)
 	organizers = []
 	qamSolutions = Queue()
 	for j in range(nGroups):
 		print("Setting up group %d of workers."%j)
-		for i in range(nSplit):
-			# each process gets its own iterator
-			preIterator = setUpIterator(A2.nrows(), partitionedFuncs[i+j] )
-			p = Process( target=preSearch, args=(qamSolutions, preIterator, A2, initialTimeout) )
-			p.start()
-			organizers.append(p)
+		# each process gets its own iterator
+		preIterator = setUpIterator(A2.nrows(), partitionedFuncs[j] )
+		p = Process( target=preSearch, args=(qamSolutions, preIterator, A2, initialTimeout) )
+		p.start()
+		organizers.append(p)
 	
