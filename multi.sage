@@ -279,10 +279,11 @@ def preSearch(finalSolutionQueue, solutionIterator, startMatrix, initTimeout = N
 					p.terminate()
 					timeoutCounter += 1
 					if timeoutCounter == nSplit:
-						with timeoutObj.get_lock():
-							timeoutObj.value = timeoutObj.value * 1.25
-							print("TIMEOUT for %d now is %d secs as it seemed to harsh."%(pid,timeoutObj.value))
 						timeoutCounter = 0
+						if TIMEOUT <= 2*initTimeout:
+							with timeoutObj.get_lock():
+								timeoutObj.value = timeoutObj.value * 1.25
+								print("TIMEOUT for %d now is %d secs as it seemed to harsh."%(pid,timeoutObj.value))
 			else:
 				print("Subprocess %d of Parent %d stopped within timeout."%(p.pid, pid))
 				t_end = time()
@@ -307,12 +308,12 @@ def preSearch(finalSolutionQueue, solutionIterator, startMatrix, initTimeout = N
 			except StopIteration:
 				preIterationStopped = True
 		else:
-			print("There are no more subproblems to be found or investigated. %d Stopping."%pid)
+			print("There are no more subproblems to be found or investigated. Process %d Stopping."%pid)
 			break
 			
 def finalSearch(foundEv, domainDict, submatrix, timeoutObj, finalSolutionQueue, parentPID):
 	pid = getpid()
-	print("%d started looking for final column."%pid)
+	print("Process %d started looking for final column."%pid)
 	def domainFunc(ind):
 		return domainDict[ind]
 	
@@ -333,12 +334,12 @@ def finalSearch(foundEv, domainDict, submatrix, timeoutObj, finalSolutionQueue, 
 					oldTIMEOUT = timeoutObj.value 
 					newTIMEOUT = (q-1)/q * oldTIMEOUT + 1/q*floor(1.1*(t_end - t_start))
 					timeoutObj.value = newTIMEOUT
-				print("TIMEOUT for %d now is %d secs."%(parentPID,newTIMEOUT))
+				print("TIMEOUT for process %d now is %d secs."%(parentPID,newTIMEOUT))
 					
 			qam = extendSubQAM(submatrix, qamSolution)
 			poly = getPolynomFromQAM(qam)
 			finalSolutionQueue.put(qam)
-			print("%d found a QAM:\n%s\n%s"%(pid, qam.str(), poly))
+			print("Subprocess %d of parent %d found a QAM:\n%s\n%s"%(pid,parentPID, qam.str(), poly))
 			savePath = path.join(resultDir, "qam_%d_%d.txt"%(pid,solCounter))
 			with open(savePath, "w") as f:
 				f.write(qam.str() + "\n" + poly)
@@ -347,7 +348,7 @@ def finalSearch(foundEv, domainDict, submatrix, timeoutObj, finalSolutionQueue, 
 		except StopIteration:
 			break
 	
-	print("%d stopping work."%pid)
+	print("Subprocess %d of parent %d stopping work."%(pid, parentPID))
 	
 def estimatorSearch(solIterator, firstSolTime):
 	t_start = time()
