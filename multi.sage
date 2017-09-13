@@ -3,7 +3,7 @@ from time import time
 from os import getpid, path
 from numpy import array_split
 
-n = 7
+n = 8
 K.<w> = GF(2^n, 'w',repr="log")
 KSet = set(K.list())
 
@@ -294,7 +294,7 @@ def preSearch(finalSolutionQueue, solutionIterator, startMatrix, initTimeout = N
 
 				elif timeoutObj:		
 					with timeoutObj.get_lock():
-						timeoutObj.value = timeoutObj.value * 1.1
+						timeoutObj.value = min( [floor(1.5*initialTimeout),timeoutObj.value * 1.1] )
 						print("TIMEOUT for %d now is %d secs as it seemed to harsh."%(pid,timeoutObj.value))
 		
 		elif preIterationStopped != True:
