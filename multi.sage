@@ -3,7 +3,7 @@ from time import time
 from os import getpid, path
 from numpy import array_split
 
-n = 8
+n = 7
 K.<w> = GF(2^n, 'w',repr="log")
 KSet = set(K.list())
 
@@ -55,7 +55,7 @@ def getPolynomFromQAM(qam):
 					polStr += "x^%d + "%(powerOfX)
 	return polStr[:-3]
 	
-print("Set up with initial QAM\n%s\n%s."%(H.str(),getPolynomFromQAM(H)))
+print("Set up with initial QAM\n%s\nand polynomial %s."%(H.str(),getPolynomFromQAM(H)))
 	
 def rowSpan(rowVector):
 	'''Takes a row vector and outputs the subspace spaned by its elements as a set.'''
@@ -343,7 +343,7 @@ def finalSearch(foundEv, domainDict, submatrix, timeoutObj, finalSolutionQueue, 
 					
 			qam = extendSubQAM(submatrix, qamSolution)
 			poly = getPolynomFromQAM(qam)
-			finalSolutionQueue.put(qam)
+			finalSolutionQueue.put(poly)
 			print("Subprocess %d of parent %d found a QAM:\n%s\n%s"%(pid,parentPID, qam.str(), poly))
 			savePath = path.join(resultDir, "qam_%d_%d.txt"%(pid,solCounter))
 			with open(savePath, "w") as f:
@@ -362,12 +362,12 @@ def estimatorSearch(solIterator, firstSolTime):
 		t_end = time()
 		print("Process %d found a solution in %f secs."%(getpid(), t_end - t_start))
 		with firstSolTime.get_lock():
-			firstSolTime.value += t_end - t_start
+			firstSolTime.value = t_end - t_start
 	except StopIteration:
 		t_end = time()
 		print("Process %d didn't find a solution within %f secs.."%(getpid(), t_end - t_start))
 		with firstSolTime.get_lock():
-			firstSolTime.value += t_start - t_end	# negative sign for distinction
+			firstSolTime.value = t_start - t_end	# negative sign for distinction
 		
 		
 def gaugeTimeout():
@@ -377,37 +377,60 @@ def gaugeTimeout():
 	S = getOriginalDomainFunction(A)
 	domainFuncs = partitionDomainFunc(S, nSplit)
 	estimators = []
-	times = []
+	timesV = []
 	for fx in domainFuncs:
 		sol = setUpIterator(n-1, fx)
 		solTime = Value('d', randint(20,50))
 		p = Process( target=estimatorSearch, args=(sol,solTime) )
 		p.start()
 		estimators.append(p)
-		times.append(solTime)
+		timesV.append(solTime)
 	for p in estimators:
 		p.join()
-	times = [solTime.value for solTime in times]
+		
+	times = []
+	for sT in timesV:
+		with sT.get_lock():
+			times.append(sT.value)
+	print times
 	timeout = max([floor(max(times)*1.1),1])
 	print("Estimations done.")
 	print("Initial Timeout set to %d secs."%timeout)
 	
 	return timeout
+	
+def saveSols(solQueue):
+	print("Saving solutions...")
+	sols = ""
+	while solQueue.qsize() > 0:
+		poly = solQueue.get()
+		sols = sols + poly + ",\n"
+	if sols != "":
+		with open(path.join(resultDir, "resList.txt"), "w") as f:
+			f.write(sols)
+	print("Done.")
 		
 if __name__ == "__main__":
-	initialTimeout = gaugeTimeout()
+	try:
+		initialTimeout = gaugeTimeout()
 	
-	# Set up pre-Search preliminaries
-	A2 = H[:n-2, :n-2]
-	S2 = getOriginalDomainFunction(A2)
-	partitionedFuncs = partitionDomainFunc(S2, nGroups)
-	organizers = []
-	qamSolutions = Queue()
-	for j in range(nGroups):
-		print("Setting up group %d of workers."%j)
-		# each process gets its own iterator
-		preIterator = setUpIterator(A2.nrows(), partitionedFuncs[j] )
-		p = Process( target=preSearch, args=(qamSolutions, preIterator, A2, initialTimeout) )
-		p.start()
-		organizers.append(p)
-	
+		# Set up pre-Search preliminaries
+		A2 = H[:n-2, :n-2]
+		S2 = getOriginalDomainFunction(A2)
+		partitionedFuncs = partitionDomainFunc(S2, nGroups)
+		organizers = []
+		qamSolutions = Queue()
+		for j in range(nGroups):
+			print("Setting up group %d of workers."%j)
+			# each process gets its own iterator
+			preIterator = setUpIterator(A2.nrows(), partitionedFuncs[j] )
+			p = Process( target=preSearch, args=(qamSolutions, preIterator, A2, initialTimeout) )
+			p.start()
+			organizers.append(p)
+		for p in organizers:
+			p.join()
+		saveSols(qamSolutions)
+	except KeyboardInterrupt:
+		saveSols(qamSolutions)
+		
+			
