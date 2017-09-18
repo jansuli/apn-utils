@@ -32,5 +32,6 @@ def toCNF(readFile, outFile):
 	with open(outFile, "w") as f:
 		f.write(final)
 	return 
+ 
 		
 	
