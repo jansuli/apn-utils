@@ -1,10 +1,10 @@
+import matplotlib
+matplotlib.use("Agg")
+
 from constraint import *
 from simpleai.search import CspProblem, backtrack
 from simpleai.search import MOST_CONSTRAINED_VARIABLE as mcv, HIGHEST_DEGREE_VARIABLE as hdv, LEAST_CONSTRAINING_VALUE as lcv
 import numpy as np
-
-import matplotlib
-matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 def benchmarkRoutine(n):
