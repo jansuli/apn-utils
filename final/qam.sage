@@ -2,6 +2,9 @@ from constraint import *
 from simpleai.search import CspProblem, backtrack
 from simpleai.search import MOST_CONSTRAINED_VARIABLE as mcv, HIGHEST_DEGREE_VARIABLE as hdv, LEAST_CONSTRAINING_VALUE as lcv
 import numpy as np
+
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 def benchmarkRoutine(n):
@@ -237,7 +240,7 @@ for i in range(5,6):
 		height = rect.get_height()
 		ax.text(rect.get_x() + rect.get_width(), 1.05*height,'%.2f' % height, ha='center', va='bottom')
 	plt.tight_layout()
-	plt.savefig("barChartSingleSol%d.png"%i)
+	plt.savefig("barChartSingleSol%d.pgf"%i)
 	plt.close()
 	
 	######## 5 Solutions
@@ -269,5 +272,5 @@ for i in range(5,6):
 		height = rect.get_height()
 		ax.text(rect.get_x() + rect.get_width(), 1.05*height,'%.2f' % height, ha='center', va='bottom')
 	plt.tight_layout()
-	plt.savefig("barChartMultiSol%d.png"%i)
+	plt.savefig("barChartMultiSol%d.pgf"%i)
 	plt.close()
