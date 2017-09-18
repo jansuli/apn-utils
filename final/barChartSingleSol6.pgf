@@ -71,8 +71,8 @@
 \pgfsetdash{}{0pt}%
 \pgfpathmoveto{\pgfqpoint{0.873390in}{1.554028in}}%
 \pgfpathlineto{\pgfqpoint{0.983982in}{1.554028in}}%
-\pgfpathlineto{\pgfqpoint{0.983982in}{2.562284in}}%
-\pgfpathlineto{\pgfqpoint{0.873390in}{2.562284in}}%
+\pgfpathlineto{\pgfqpoint{0.983982in}{2.558690in}}%
+\pgfpathlineto{\pgfqpoint{0.873390in}{2.558690in}}%
 \pgfpathclose%
 \pgfusepath{fill}%
 \end{pgfscope}%
@@ -90,8 +90,8 @@
 \pgfsetdash{}{0pt}%
 \pgfpathmoveto{\pgfqpoint{1.426352in}{1.554028in}}%
 \pgfpathlineto{\pgfqpoint{1.536944in}{1.554028in}}%
-\pgfpathlineto{\pgfqpoint{1.536944in}{1.618977in}}%
-\pgfpathlineto{\pgfqpoint{1.426352in}{1.618977in}}%
+\pgfpathlineto{\pgfqpoint{1.536944in}{1.601461in}}%
+\pgfpathlineto{\pgfqpoint{1.426352in}{1.601461in}}%
 \pgfpathclose%
 \pgfusepath{fill}%
 \end{pgfscope}%
@@ -128,8 +128,8 @@
 \pgfsetdash{}{0pt}%
 \pgfpathmoveto{\pgfqpoint{2.532275in}{1.554028in}}%
 \pgfpathlineto{\pgfqpoint{2.642868in}{1.554028in}}%
-\pgfpathlineto{\pgfqpoint{2.642868in}{3.414155in}}%
-\pgfpathlineto{\pgfqpoint{2.532275in}{3.414155in}}%
+\pgfpathlineto{\pgfqpoint{2.642868in}{3.458363in}}%
+\pgfpathlineto{\pgfqpoint{2.532275in}{3.458363in}}%
 \pgfpathclose%
 \pgfusepath{fill}%
 \end{pgfscope}%
@@ -147,8 +147,8 @@
 \pgfsetdash{}{0pt}%
 \pgfpathmoveto{\pgfqpoint{3.085237in}{1.554028in}}%
 \pgfpathlineto{\pgfqpoint{3.195829in}{1.554028in}}%
-\pgfpathlineto{\pgfqpoint{3.195829in}{2.879741in}}%
-\pgfpathlineto{\pgfqpoint{3.085237in}{2.879741in}}%
+\pgfpathlineto{\pgfqpoint{3.195829in}{2.943161in}}%
+\pgfpathlineto{\pgfqpoint{3.085237in}{2.943161in}}%
 \pgfpathclose%
 \pgfusepath{fill}%
 \end{pgfscope}%
@@ -166,8 +166,8 @@
 \pgfsetdash{}{0pt}%
 \pgfpathmoveto{\pgfqpoint{3.638199in}{1.554028in}}%
 \pgfpathlineto{\pgfqpoint{3.748791in}{1.554028in}}%
-\pgfpathlineto{\pgfqpoint{3.748791in}{1.624865in}}%
-\pgfpathlineto{\pgfqpoint{3.638199in}{1.624865in}}%
+\pgfpathlineto{\pgfqpoint{3.748791in}{1.626118in}}%
+\pgfpathlineto{\pgfqpoint{3.638199in}{1.626118in}}%
 \pgfpathclose%
 \pgfusepath{fill}%
 \end{pgfscope}%
@@ -185,8 +185,8 @@
 \pgfsetdash{}{0pt}%
 \pgfpathmoveto{\pgfqpoint{4.191160in}{1.554028in}}%
 \pgfpathlineto{\pgfqpoint{4.301753in}{1.554028in}}%
-\pgfpathlineto{\pgfqpoint{4.301753in}{2.259411in}}%
-\pgfpathlineto{\pgfqpoint{4.191160in}{2.259411in}}%
+\pgfpathlineto{\pgfqpoint{4.301753in}{2.248862in}}%
+\pgfpathlineto{\pgfqpoint{4.191160in}{2.248862in}}%
 \pgfpathclose%
 \pgfusepath{fill}%
 \end{pgfscope}%
@@ -204,8 +204,8 @@
 \pgfsetdash{}{0pt}%
 \pgfpathmoveto{\pgfqpoint{4.744122in}{1.554028in}}%
 \pgfpathlineto{\pgfqpoint{4.854714in}{1.554028in}}%
-\pgfpathlineto{\pgfqpoint{4.854714in}{2.935116in}}%
-\pgfpathlineto{\pgfqpoint{4.744122in}{2.935116in}}%
+\pgfpathlineto{\pgfqpoint{4.854714in}{2.856212in}}%
+\pgfpathlineto{\pgfqpoint{4.744122in}{2.856212in}}%
 \pgfpathclose%
 \pgfusepath{fill}%
 \end{pgfscope}%
@@ -223,8 +223,8 @@
 \pgfsetdash{}{0pt}%
 \pgfpathmoveto{\pgfqpoint{5.297084in}{1.554028in}}%
 \pgfpathlineto{\pgfqpoint{5.407676in}{1.554028in}}%
-\pgfpathlineto{\pgfqpoint{5.407676in}{1.764654in}}%
-\pgfpathlineto{\pgfqpoint{5.297084in}{1.764654in}}%
+\pgfpathlineto{\pgfqpoint{5.407676in}{1.761802in}}%
+\pgfpathlineto{\pgfqpoint{5.297084in}{1.761802in}}%
 \pgfpathclose%
 \pgfusepath{fill}%
 \end{pgfscope}%
@@ -242,8 +242,8 @@
 \pgfsetdash{}{0pt}%
 \pgfpathmoveto{\pgfqpoint{5.850045in}{1.554028in}}%
 \pgfpathlineto{\pgfqpoint{5.960638in}{1.554028in}}%
-\pgfpathlineto{\pgfqpoint{5.960638in}{1.952873in}}%
-\pgfpathlineto{\pgfqpoint{5.850045in}{1.952873in}}%
+\pgfpathlineto{\pgfqpoint{5.960638in}{1.934464in}}%
+\pgfpathlineto{\pgfqpoint{5.850045in}{1.934464in}}%
 \pgfpathclose%
 \pgfusepath{fill}%
 \end{pgfscope}%
@@ -507,12 +507,12 @@
 \pgfusepath{stroke,fill}%
 }%
 \begin{pgfscope}%
-\pgfsys@transformshift{0.619028in}{2.183971in}%
+\pgfsys@transformshift{0.619028in}{2.160583in}%
 \pgfsys@useobject{currentmarker}{}%
 \end{pgfscope}%
 \end{pgfscope}%
 \begin{pgfscope}%
-\pgftext[x=0.345075in,y=2.131209in,left,base]{\sffamily\fontsize{10.000000}{12.000000}\selectfont 20}%
+\pgftext[x=0.345075in,y=2.107821in,left,base]{\sffamily\fontsize{10.000000}{12.000000}\selectfont 20}%
 \end{pgfscope}%
 \begin{pgfscope}%
 \pgfsetbuttcap%
@@ -529,12 +529,12 @@
 \pgfusepath{stroke,fill}%
 }%
 \begin{pgfscope}%
-\pgfsys@transformshift{0.619028in}{2.813914in}%
+\pgfsys@transformshift{0.619028in}{2.767138in}%
 \pgfsys@useobject{currentmarker}{}%
 \end{pgfscope}%
 \end{pgfscope}%
 \begin{pgfscope}%
-\pgftext[x=0.345075in,y=2.761152in,left,base]{\sffamily\fontsize{10.000000}{12.000000}\selectfont 40}%
+\pgftext[x=0.345075in,y=2.714377in,left,base]{\sffamily\fontsize{10.000000}{12.000000}\selectfont 40}%
 \end{pgfscope}%
 \begin{pgfscope}%
 \pgfsetbuttcap%
@@ -551,12 +551,12 @@
 \pgfusepath{stroke,fill}%
 }%
 \begin{pgfscope}%
-\pgfsys@transformshift{0.619028in}{3.443857in}%
+\pgfsys@transformshift{0.619028in}{3.373693in}%
 \pgfsys@useobject{currentmarker}{}%
 \end{pgfscope}%
 \end{pgfscope}%
 \begin{pgfscope}%
-\pgftext[x=0.345075in,y=3.391095in,left,base]{\sffamily\fontsize{10.000000}{12.000000}\selectfont 60}%
+\pgftext[x=0.345075in,y=3.320932in,left,base]{\sffamily\fontsize{10.000000}{12.000000}\selectfont 60}%
 \end{pgfscope}%
 \begin{pgfscope}%
 \pgfsetbuttcap%
@@ -573,12 +573,12 @@
 \pgfusepath{stroke,fill}%
 }%
 \begin{pgfscope}%
-\pgfsys@transformshift{0.619028in}{4.073800in}%
+\pgfsys@transformshift{0.619028in}{3.980248in}%
 \pgfsys@useobject{currentmarker}{}%
 \end{pgfscope}%
 \end{pgfscope}%
 \begin{pgfscope}%
-\pgftext[x=0.345075in,y=4.021038in,left,base]{\sffamily\fontsize{10.000000}{12.000000}\selectfont 80}%
+\pgftext[x=0.345075in,y=3.927487in,left,base]{\sffamily\fontsize{10.000000}{12.000000}\selectfont 80}%
 \end{pgfscope}%
 \begin{pgfscope}%
 \pgftext[x=0.289519in,y=2.990347in,,bottom,rotate=90.000000]{\sffamily\fontsize{10.000000}{12.000000}\selectfont Time in sec.*E-3}%
@@ -628,34 +628,34 @@
 \pgfusepath{stroke}%
 \end{pgfscope}%
 \begin{pgfscope}%
-\pgftext[x=0.983982in,y=2.612697in,,bottom]{\sffamily\fontsize{10.000000}{12.000000}\selectfont 32.01}%
+\pgftext[x=0.983982in,y=2.608923in,,bottom]{\sffamily\fontsize{10.000000}{12.000000}\selectfont 33.13}%
 \end{pgfscope}%
 \begin{pgfscope}%
-\pgftext[x=1.536944in,y=1.622225in,,bottom]{\sffamily\fontsize{10.000000}{12.000000}\selectfont 2.06}%
+\pgftext[x=1.536944in,y=1.603833in,,bottom]{\sffamily\fontsize{10.000000}{12.000000}\selectfont 1.56}%
 \end{pgfscope}%
 \begin{pgfscope}%
-\pgftext[x=2.089906in,y=4.176872in,,bottom]{\sffamily\fontsize{10.000000}{12.000000}\selectfont 79.31}%
+\pgftext[x=2.089906in,y=4.176872in,,bottom]{\sffamily\fontsize{10.000000}{12.000000}\selectfont 82.37}%
 \end{pgfscope}%
 \begin{pgfscope}%
-\pgftext[x=2.642868in,y=3.507161in,,bottom]{\sffamily\fontsize{10.000000}{12.000000}\selectfont 59.06}%
+\pgftext[x=2.642868in,y=3.553580in,,bottom]{\sffamily\fontsize{10.000000}{12.000000}\selectfont 62.79}%
 \end{pgfscope}%
 \begin{pgfscope}%
-\pgftext[x=3.195829in,y=2.946026in,,bottom]{\sffamily\fontsize{10.000000}{12.000000}\selectfont 42.09}%
+\pgftext[x=3.195829in,y=3.012618in,,bottom]{\sffamily\fontsize{10.000000}{12.000000}\selectfont 45.80}%
 \end{pgfscope}%
 \begin{pgfscope}%
-\pgftext[x=3.748791in,y=1.628407in,,bottom]{\sffamily\fontsize{10.000000}{12.000000}\selectfont 2.25}%
+\pgftext[x=3.748791in,y=1.629722in,,bottom]{\sffamily\fontsize{10.000000}{12.000000}\selectfont 2.38}%
 \end{pgfscope}%
 \begin{pgfscope}%
-\pgftext[x=4.301753in,y=2.294680in,,bottom]{\sffamily\fontsize{10.000000}{12.000000}\selectfont 22.40}%
+\pgftext[x=4.301753in,y=2.283604in,,bottom]{\sffamily\fontsize{10.000000}{12.000000}\selectfont 22.91}%
 \end{pgfscope}%
 \begin{pgfscope}%
-\pgftext[x=4.854714in,y=3.004170in,,bottom]{\sffamily\fontsize{10.000000}{12.000000}\selectfont 43.85}%
+\pgftext[x=4.854714in,y=2.921321in,,bottom]{\sffamily\fontsize{10.000000}{12.000000}\selectfont 42.94}%
 \end{pgfscope}%
 \begin{pgfscope}%
-\pgftext[x=5.407676in,y=1.775186in,,bottom]{\sffamily\fontsize{10.000000}{12.000000}\selectfont 6.69}%
+\pgftext[x=5.407676in,y=1.772191in,,bottom]{\sffamily\fontsize{10.000000}{12.000000}\selectfont 6.85}%
 \end{pgfscope}%
 \begin{pgfscope}%
-\pgftext[x=5.960638in,y=1.972815in,,bottom]{\sffamily\fontsize{10.000000}{12.000000}\selectfont 12.66}%
+\pgftext[x=5.960638in,y=1.953486in,,bottom]{\sffamily\fontsize{10.000000}{12.000000}\selectfont 12.54}%
 \end{pgfscope}%
 \begin{pgfscope}%
 \pgftext[x=3.417014in,y=4.510000in,,base]{\sffamily\fontsize{12.000000}{14.400000}\selectfont 'Last Column Search', 1 Sol. in 6 dimensions.}%
