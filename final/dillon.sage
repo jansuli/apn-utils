@@ -1,10 +1,10 @@
-n = 3
+n = 8
 
 # Set up fields and vector spaces
 F2 = GF(2)
 V = VectorSpace(F2, n)
 VBasis = V.basis()					# column options for L in row echelon
-K.<w> = GF(2^n, 'w', repr="log") 				# w as primitive Element
+K.<w> = GF(2^n, 'w', repr="log") 	# w as primitive Element
 KList = K.list()					# for comfortable indexing
 CodeSpace = VectorSpace(F2, 2^n-1)
 R.<z> = PolynomialRing(K, 'z')		# needed for Lagrange-Interpolation, thus for actually printing polynomials (in z)
@@ -24,7 +24,7 @@ def lagrangeInterpolation(func):
 
 # Test kim function 
 def f(x):
-	return x^3 + x^10 + w* x^24
+	return w^250*x^192 + w^236*x^160 + w^182*x^144 + w^82*x^136 + w^82*x^132 + w^152*x^130 + w^132*x^129 + w^244*x^96 + w^201*x^80 + w^152*x^72 + w^131*x^68 + w^191*x^66 + w^63*x^65 + w^84*x^48 + w^156*x^40 + w^109*x^36 + w^221*x^34 + w^93*x^33 + w^239*x^24 + w^148*x^20 + w^97*x^18 + w^162*x^17 + w^91*x^12 + w^176*x^10 + w^254*x^9 + w^183*x^6 + w^188*x^5 + w^68*x^3
 	
 # Build generator matrix H of dual Code
 H = matrix(F2, 2*n, 0)
@@ -91,7 +91,7 @@ def nextColumn(mat):
 			if testMatrix * c == 0:
 				break
 		else:
-			if j <= 2*n - 1:
+			if j < 2*n:
 				nextColumn(testMatrix)
 			else:
 				print("Solution:\n%s\n"%testMatrix.str())
@@ -114,7 +114,7 @@ for pair in Combinations(solutions, 2):
 		
 ## If we found at least one disjoint pair, print the first apn-permutation
 if len(pairs) > 0:
-	print("We have %d disjoint pairs. The first one leads to the following APN-permutation:"%(len(pairs)))
+	print("We have %d disjoint pairs (disregarding ordering). The first one leads to the following APN-permutation:"%(len(pairs)))
 	L1, L2 = pairs[0]
 	H1 = L1 * Hext
 	H2 = L2 * Hext
