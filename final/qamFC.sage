@@ -101,33 +101,29 @@ def nextAssignement(assigned, domains, domainFunc):
 	unassigned = [v for v in variables if v not in assigned]
 
 	if len(assigned) < n-2:
-		# mvr:
 		unassigned = sorted(unassigned, key = lambda v : len(domains[v]) )
-		
-		for var in unassigned:
-			unassignedLeft = [unVar for unVar in unassigned if unVar != var]
-			for val in domains[var]:
-				# forwardcheck
-				domainFn = getSetFn(domainFunc, val, var)
-				newDomainDict = dict()
-				for unVar in unassignedLeft:
-					domain = domainFn((unVar,))
-					if domain == set():
-						#print("Forward Check failed. Backtracking.")
-						break
-					newDomainDict[unVar] = domain
-				else:
-					assignment = copy(assigned)
-					assignment[var] = val 
-					for s in  nextAssignement(assignment, newDomainDict, domainFn):
-						yield s
+		var = unassigned[0]
+		unassignedLeft = [unVar for unVar in unassigned if unVar != var]
+		for val in domains[var]:
+			domainFn = getSetFn(domainFunc, val, var)
+			newDomainDict = dict()
+			for unVar in unassignedLeft:
+				domain = domainFn((unVar,))
+				if domain == set():
+					break
+				newDomainDict[unVar] = domain
+			else:
+				assignment = copy(assigned)
+				assignment[var] = val 
+				for s in nextAssignement(assignment, newDomainDict, domainFn):
+					if s != None: yield s
 	else:
 		assignment = copy(assigned)
 		for val in domains[unassigned[0]]:
 			assignment[unassigned[0]] = val
 			yield assignment
 
-sol = nextAssignement(assignment, domains, S)
+mrv_fc = nextAssignement(assignment, domains, S)
 
 ### Original Iterator
 			
@@ -140,18 +136,19 @@ def nextComponent(columnTilNow, setFn):
 	newCol = copy(columnTilNow)
 	pos = n - (newCol.list().count(0) + 1)
 	domain = setFn(tuple([pos]))
-	if len(domain) > 0:
-		for xi in domain:
-			newCol[pos] = xi			
-			if pos < n-2:
-				newSetFn = getSetFnOr(setFn, xi, pos)
-				for col in nextComponent(newCol, newSetFn):
-					yield col 
-			else:
-				yield newCol
+	if pos < n-2:
+		for val in domain:
+			newCol[pos] = val			
+			newSetFn = getSetFnOr(setFn, val, pos)
+			for col in nextComponent(newCol, newSetFn):
+				if col != None: yield col 
+	else:
+		for val in domain:
+			newCol[pos] = val
+			yield newCol
 
 startColumn = matrix(K, n-1, 1)		
-sol2 = nextComponent(startColumn, S)
+original = nextComponent(startColumn, S)
 		
 
 def applySol(assignment):

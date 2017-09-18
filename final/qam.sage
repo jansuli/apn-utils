@@ -89,10 +89,9 @@ def benchmarkRoutine(n):
 		return returnDict[indices]
 
 	sumIndices = [tuple(ind) for ind in Indices if len(ind) > 1]	
-			
-	############ Set up CSP using python-constraint ################
 
 	def setUpProblems():
+		######## Set up CSP using python-constraint #############
 		p = Problem()
 
 		# Add variables and domains
@@ -127,24 +126,25 @@ def benchmarkRoutine(n):
 		def getProblemIterator():
 			startColumn = matrix(K, n-1, 1)
 			
-			def getSetFn(oldFn, xi, position):
+			def getSetFnOr(oldFn, xi, pos):
 				def newSetFn(indices):
-					return oldFn(indices).intersection(set([xi + v for v in oldFn((position,)+indices)]))
+					return oldFn(indices).intersection(set([xi + v for v in oldFn((pos,)+indices)]))
 				return newSetFn	
 					
 			def nextComponent(columnTilNow, setFn):
 				newCol = copy(columnTilNow)
 				pos = n - (newCol.list().count(0) + 1)
 				domain = setFn(tuple([pos]))
-				if len(domain) > 0:
-					for xi in domain:
-						newCol[pos] = xi			
-						if pos < n-2:
-							newSetFn = getSetFn(setFn, xi, pos)
-							for col in nextComponent(newCol, newSetFn):
-								yield col 
-						else:
-							yield newCol
+				if pos < n-2:
+					for val in domain:
+						newCol[pos] = val			
+						newSetFn = getSetFnOr(setFn, val, pos)
+						for col in nextComponent(newCol, newSetFn):
+							if col != None: yield col 
+				else:
+					for val in domain:
+						newCol[pos] = val
+						yield newCol
 
 			return nextComponent(startColumn, S)
 			
@@ -204,7 +204,7 @@ def benchmarkRoutine(n):
 	
 # Do benchmarks for different n and plot everything
 
-for i in range(5,8):
+for i in range(5,6):
 	print ("Benchmarking dimension %d."%i)
 	dataSingle, dataMulti = benchmarkRoutine(i)
 	
